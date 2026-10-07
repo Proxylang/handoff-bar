@@ -40,6 +40,9 @@
     color: var(--text);
     font: 16px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
+    /* Korean (after translation) breaks lines between words, not inside them. */
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
   a { color: inherit; }
   .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
@@ -174,7 +177,11 @@
 <main>
   <div class="wrap hero">
     <div class="rise">
-      <h1>Pick up any Claude Code chat where you left off <span class="h1-note">(without wasting tokens)</span></h1>
+      <!-- Hand-written Korean for the headline; Proxylang translates the rest of the page. -->
+      <h1 data-proxylang-no-translate>
+        <span data-en="Pick up any Claude Code chat where you left off" data-ko="Claude Code 대화, 멈춘 곳에서 바로 이어가세요">Pick up any Claude Code chat where you left off</span>
+        <span class="h1-note" data-en="(without wasting tokens)" data-ko="(토큰 낭비 없이)">(without wasting tokens)</span>
+      </h1>
       <p class="lead">Before a chat's cache expires, HandoffBar saves a summary. Paste it into a new chat and keep going, instead of paying to reload the old one.</p>
       <div class="ctas">
         <a class="btn btn-primary" href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg">Download for Mac</a>
@@ -279,5 +286,17 @@
     <a href="https://github.com/Proxylang/handoff-bar">github.com/Proxylang/handoff-bar</a>
   </div>
 </footer>
+<script>
+  // Proxylang sets <html lang> when the visitor switches language. Show the hand-written
+  // Korean headline for Korean, the English one for everything else.
+  function applyHeadlineLang() {
+    var korean = /^ko/i.test(document.documentElement.lang);
+    document.querySelectorAll('[data-ko]').forEach(function (el) {
+      el.textContent = korean ? el.dataset.ko : el.dataset.en;
+    });
+  }
+  new MutationObserver(applyHeadlineLang).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  applyHeadlineLang();
+</script>
 </body>
 </html>
