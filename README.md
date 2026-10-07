@@ -135,6 +135,8 @@ Needs macOS 13 or later. Works on Apple Silicon and Intel. The app is signed and
 
 If you use a menu bar manager such as Ice or Bartender, it may hide the new icon. Drag it into the visible part of the menu bar.
 
+Want a Windows version? [Open an issue](https://github.com/Proxylang/handoff-bar/issues/new?title=Windows%20version) and tell us.
+
 **한국어**
 
 1. [HandoffBar.dmg](https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg)를 내려받아요.
@@ -144,6 +146,8 @@ If you use a menu bar manager such as Ice or Bartender, it may hide the new icon
 macOS 13 이상에서 동작하고, Apple Silicon과 Intel Mac을 모두 지원해요. Apple의 서명과 공증을 받은 앱이라 경고 없이 바로 열려요.
 
 Ice나 Bartender 같은 메뉴 막대 정리 앱을 쓰고 있다면 새 아이콘이 숨겨질 수 있어요. 그럴 땐 아이콘을 메뉴 막대의 보이는 영역으로 끌어다 놓으세요.
+
+Windows 버전이 필요하신가요? [이슈를 남겨](https://github.com/Proxylang/handoff-bar/issues/new?title=Windows%20version) 알려 주세요.
 
 ## Build from source · 소스에서 빌드
 
