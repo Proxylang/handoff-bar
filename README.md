@@ -151,7 +151,7 @@ Needs macOS 13 or later. Works on Apple Silicon and Intel. The app is signed and
 
 If you use a menu bar manager such as Ice or Bartender, it may hide the new icon. Drag it into the visible part of the menu bar.
 
-Want a Windows version? [Open an issue](https://github.com/Proxylang/handoff-bar/issues/new?title=Windows%20version) and tell us.
+**Windows:** a Windows version is on its way to the Microsoft Store. Its source is in [windows/](windows/).
 
 **한국어**
 
@@ -163,7 +163,7 @@ macOS 13 이상에서 동작하고, Apple Silicon과 Intel Mac을 모두 지원�
 
 Ice나 Bartender 같은 메뉴 막대 정리 앱을 쓰고 있다면 새 아이콘이 숨겨질 수 있어요. 그럴 땐 아이콘을 메뉴 막대의 보이는 영역으로 끌어다 놓으세요.
 
-Windows 버전이 필요하신가요? [이슈를 남겨](https://github.com/Proxylang/handoff-bar/issues/new?title=Windows%20version) 알려 주세요.
+**Windows:** Windows 버전은 곧 Microsoft Store에 올라와요. 소스 코드는 [windows/](windows/) 폴더에 있어요.
 
 ## Build from source · 소스에서 빌드
 
@@ -202,10 +202,10 @@ The website is the static `site/` folder.
 
 HandoffBar is made by [Proxylang](https://proxylang.dev). Proxylang translates websites into 77+ languages. Add one line of code and your site is live in other languages in about a minute, with per-language SEO built in.
 
-HandoffBar is not affiliated with Anthropic. MIT licensed.
+HandoffBar is not affiliated with Anthropic. MIT licensed. [Privacy policy](https://handoffbar.proxylang.dev/privacy.html).
 
 **한국어**
 
 HandoffBar는 [Proxylang](https://proxylang.dev)이 만들었어요. Proxylang은 웹사이트를 77개 이상의 언어로 번역해 주는 서비스예요. 코드 한 줄만 추가하면 1분 정도 만에 사이트가 여러 언어로 열리고, 언어별 SEO도 기본으로 지원해요.
 
-HandoffBar는 Anthropic과 관련이 없어요. MIT 라이선스로 배포해요.
+HandoffBar는 Anthropic과 관련이 없어요. MIT 라이선스로 배포해요. [개인정보 처리방침](https://handoffbar.proxylang.dev/privacy.html).

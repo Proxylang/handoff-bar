@@ -2,3 +2,4 @@ build/
 dist/
 AppIcon.iconset/
 .DS_Store
+windows/dist/
