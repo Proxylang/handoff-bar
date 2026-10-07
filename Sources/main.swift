@@ -49,7 +49,11 @@ final class App: NSObject, NSApplicationDelegate {
     }
 
     func copy(_ h: Handoff) {
-        guard let text = try? String(contentsOf: h.url, encoding: .utf8) else { return }
+        guard var text = try? String(contentsOf: h.url, encoding: .utf8) else { return }
+        // Copy the tab's current name, not the one it had when the handoff was written.
+        if h.renamed, let firstLine = text.range(of: "\n") {
+            text.replaceSubrange(text.startIndex..<firstLine.lowerBound, with: "# Handoff: \(h.title)")
+        }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
         store.copiedID = h.id
