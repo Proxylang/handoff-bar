@@ -4,7 +4,11 @@
 #   powershell -STA -ExecutionPolicy Bypass -File test-run.ps1
 #
 # Close it with the tray icon's right-click menu > Quit HandoffBar.
+param([switch] $Open)  # -Open shows the panel once right after start
 $ErrorActionPreference = 'Stop'
+# Match HandoffBar.exe, whose manifest makes it per-monitor DPI aware (sharp text on scaled screens).
+Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class Dpi { [DllImport("user32.dll")] public static extern bool SetProcessDpiAwarenessContext(IntPtr v); }'
+[void][Dpi]::SetProcessDpiAwarenessContext([IntPtr](-4))
 Set-Location $PSScriptRoot
 # Set-Location moves only PowerShell. The app reads HandoffBar.ico from .NET's own current folder.
 [Environment]::CurrentDirectory = $PSScriptRoot
@@ -20,4 +24,18 @@ Add-Type -TypeDefinition (($usings + $body) -join "`n") -Language CSharp -Warnin
   -ReferencedAssemblies System.Drawing, System.Windows.Forms, System.Core, "$fw\System.Web.Extensions.dll"
 
 [System.Windows.Forms.Application]::EnableVisualStyles()
-[System.Windows.Forms.Application]::Run((New-Object Tray))
+$tray = New-Object Tray
+if ($Open) {
+  $popup = [Tray].GetField('popup', [Reflection.BindingFlags]'NonPublic,Instance').GetValue($tray)
+  $timer = New-Object System.Windows.Forms.Timer
+  $timer.Interval = 1000
+  $timer.Add_Tick({
+    $timer.Stop()
+    # Open it where a tray click would: the bottom-right corner of the main screen.
+    $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+    [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point ($b.Right - 150), ($b.Bottom - 20)
+    $popup.Toggle()
+  })
+  $timer.Start()
+}
+[System.Windows.Forms.Application]::Run($tray)
