@@ -1,10 +1,17 @@
-# HandoffBar
+<p align="center"><img src="site/icon.png" width="128" alt="HandoffBar icon"></p>
 
-A menu bar app for [Claude Code](https://claude.com/claude-code) on macOS.
+<h1 align="center">HandoffBar</h1>
 
-Claude Code caches each chat's context so replies stay fast and cheap. The cache expires after a period of no activity: 1 hour on Claude Max, 5 minutes on Pro and the API. When a chat's cache is about to expire, HandoffBar writes a handoff: a short summary of the chat that you paste into a new chat to pick up where you left off.
+<p align="center">Pick up any <a href="https://claude.com/claude-code">Claude Code</a> chat where you left off.<br>
+<a href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg"><b>Download for Mac</b></a> · <a href="https://handoffbar.proxylang.dev">Website</a></p>
 
-Click the hand in the menu bar to see your recent chats. Click one to copy its handoff prompt.
+<p align="center"><img src="site/panel-light.png" width="380" alt="The HandoffBar panel: recent chats with titles, project names, and times"></p>
+
+## What it does
+
+Claude Code caches each chat so replies stay fast and cheap. Leave a chat alone too long and the cache expires. The next message then re-reads the whole chat at full price.
+
+HandoffBar watches your chats. A few minutes before a chat's cache expires, it saves a **handoff**: a short Markdown summary of that chat. Click the hand in your menu bar, click the chat, and paste the handoff into a new Claude Code chat to keep going.
 
 ## What a handoff contains
 
@@ -14,24 +21,28 @@ Click the hand in the menu bar to see your recent chats. Click one to copy its h
 - The files the chat edited
 - Claude's last reply
 
-Handoffs are plain Markdown files in `~/.claude/handoffs/`, one per chat, named by chat id.
+Handoffs are saved in `~/.claude/handoffs/`, one file per chat, named by chat id.
 
 ## When handoffs are written
 
-HandoffBar checks your chat files in `~/.claude/projects/` once a minute. It reads each chat's cache length from the usage data Claude Code saves, then writes the handoff:
+Each Claude Code chat gets a cache that lasts either 5 minutes or 1 hour. HandoffBar checks your chat files in `~/.claude/projects/` once a minute and reads which cache each chat got from the usage data Claude Code saves. Then it writes the handoff:
 
 - 5 minutes before a 1-hour cache expires
 - 2 minutes before a 5-minute cache expires
 
-A new reply in that chat resets the timer. Everything happens on your Mac. HandoffBar makes no network calls and calls no model.
+A new reply in that chat resets the timer. Chats started in a temp folder (usually scripts running Claude Code) are skipped.
+
+## Privacy
+
+Everything happens on your Mac. HandoffBar makes no network calls, needs no account, and calls no model. It only reads the chat files Claude Code already keeps and writes Markdown files next to them.
 
 ## Install
 
-1. Download `HandoffBar.zip` from the latest release and unzip it.
-2. Move `HandoffBar.app` to your Applications folder and open it.
-3. Click the hand in the menu bar and tick **Open at login**.
+1. Download [HandoffBar.dmg](https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg).
+2. Open it and drag HandoffBar into Applications.
+3. Open HandoffBar, click the hand in your menu bar, and tick **Open at login**.
 
-Needs macOS 13 or later. Works on Apple Silicon and Intel.
+Needs macOS 13 or later. Works on Apple Silicon and Intel. The app is signed and notarized by Apple.
 
 If you use a menu bar manager such as Ice or Bartender, it may hide the new icon. Drag it into the visible part of the menu bar.
 
@@ -41,7 +52,7 @@ If you use a menu bar manager such as Ice or Bartender, it may hide the new icon
 ./build.sh
 ```
 
-This builds the app, signs it, copies it to `~/Applications`, and starts it. It needs Apple's command line tools (`xcode-select --install`).
+This builds the app, signs it, copies it to `~/Applications`, and starts it. It needs Apple's command line tools (`xcode-select --install`). Without a Developer ID certificate the app is signed for your Mac only.
 
 To make a notarized download, store a notarytool keychain profile first, then run:
 
@@ -49,7 +60,7 @@ To make a notarized download, store a notarytool keychain profile first, then ru
 ./build.sh release <profile name>
 ```
 
-The zip lands in `dist/HandoffBar.zip`.
+The installer lands in `dist/HandoffBar.dmg`, with a zip of the app next to it.
 
 To redraw the app icon:
 
@@ -57,3 +68,11 @@ To redraw the app icon:
 swift tools/make-icon.swift
 iconutil -c icns AppIcon.iconset -o AppIcon.icns
 ```
+
+The website is the static `site/` folder.
+
+## Made by Proxylang
+
+HandoffBar is made by [Proxylang](https://proxylang.dev). Proxylang translates websites into 77+ languages. Add one line of code and your site is live in other languages in about a minute, with per-language SEO built in.
+
+HandoffBar is not affiliated with Anthropic. MIT licensed.

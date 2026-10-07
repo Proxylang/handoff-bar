@@ -1,7 +1,7 @@
 // Reads the handoff files for the menu bar list.
 import Foundation
 
-// More than a day of busy work. Older handoffs stay on disk, reachable from the folder button.
+// More than a day of busy work. Search still finds older handoffs.
 let maxRows = 100
 
 struct Handoff: Identifiable {
@@ -36,9 +36,8 @@ struct Handoff: Identifiable {
 func loadHandoffs() -> [Handoff] {
     let files = (try? FileManager.default.contentsOfDirectory(
         at: handoffDir, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
-    return Array(files.filter { $0.pathExtension == "md" }
+    return files.filter { $0.pathExtension == "md" }
         .map(Handoff.init)
         .filter { !$0.fromTempFolder }
         .sorted { $0.date > $1.date }
-        .prefix(maxRows))
 }

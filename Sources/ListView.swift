@@ -14,6 +14,17 @@ final class Store: ObservableObject {
     @Published var handoffs: [Handoff] = []
     @Published var copiedID: String?
     @Published var openAtLogin = SMAppService.mainApp.status == .enabled
+    @Published var query = ""
+
+    /// Search covers every handoff on disk; the list shows the newest matches.
+    var visible: [Handoff] {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        let matches = q.isEmpty ? handoffs : handoffs.filter {
+            $0.title.localizedCaseInsensitiveContains(q) || $0.project.localizedCaseInsensitiveContains(q)
+                || $0.id.localizedCaseInsensitiveContains(q)
+        }
+        return Array(matches.prefix(maxRows))
+    }
 
     func reload() {
         handoffs = loadHandoffs()
@@ -27,7 +38,7 @@ final class Store: ObservableObject {
 
     var days: [(label: String, items: [Handoff])] {
         var out: [(label: String, items: [Handoff])] = []
-        for h in handoffs {
+        for h in visible {
             let label = dayLabel(h.date)
             if out.last?.label == label { out[out.count - 1].items.append(h) } else { out.append((label, [h])) }
         }
@@ -61,10 +72,19 @@ struct ListView: View {
             }
             .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 10)
 
+            if !store.handoffs.isEmpty {
+                SearchField(text: $store.query)
+                    .padding(.horizontal, 12).padding(.bottom, 10)
+            }
+
             Divider()
 
             if store.handoffs.isEmpty {
                 Text("No handoffs yet. A chat shows up here a few minutes before its cache runs out.")
+                    .font(.system(size: 12)).foregroundStyle(.secondary)
+                    .padding(16)
+            } else if store.visible.isEmpty {
+                Text("No chats match \u{201C}\(store.query)\u{201D}.")
                     .font(.system(size: 12)).foregroundStyle(.secondary)
                     .padding(16)
             } else {
@@ -100,7 +120,7 @@ struct ListView: View {
     }
 
     var listHeight: CGFloat {
-        let content = CGFloat(store.handoffs.count) * rowHeight + CGFloat(store.days.count) * dayHeaderHeight + 6
+        let content = CGFloat(store.visible.count) * rowHeight + CGFloat(store.days.count) * dayHeaderHeight + 6
         return min(content, maxListHeight)
     }
 
@@ -144,6 +164,33 @@ struct Row: View {
     var meta: String {
         [handoff.project, ago(handoff.date)].filter { !$0.isEmpty }.joined(separator: "  ·  ")
     }
+}
+
+struct SearchField: View {
+    @Binding var text: String
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass").font(.system(size: 12)).foregroundStyle(.secondary)
+            TextField("Search chats", text: $text)
+                .textFieldStyle(.plain).font(.system(size: 13))
+                .focused($focused)
+            if !text.isEmpty {
+                Button(action: clear) {
+                    Image(systemName: "xmark.circle.fill").font(.system(size: 12)).foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Clear search")
+            }
+        }
+        .padding(.horizontal, 10).frame(height: 30)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.06)))
+        // Ready to type each time the panel opens.
+        .onReceive(NotificationCenter.default.publisher(for: NSPopover.didShowNotification)) { _ in focused = true }
+    }
+
+    func clear() { text = "" }
 }
 
 struct FooterButton: View {

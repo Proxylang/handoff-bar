@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HandoffBar - keep your Claude Code chats going</title>
+<meta name="description" content="A free Mac menu bar app. Before a Claude Code chat's cache expires, HandoffBar saves a handoff prompt. Click to copy it into a new chat.">
+<meta property="og:title" content="HandoffBar for Claude Code">
+<meta property="og:description" content="Saves a handoff prompt before a chat's cache expires. Click to copy it into a new chat.">
+<meta property="og:image" content="https://handoffbar.proxylang.dev/icon.png">
+<link rel="icon" href="/favicon.png">
+<style>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --text: #18181b;
+    --muted: #52525b;
+    --line: #e4e4e7;
+    --accent: #d9542f;
+    --accent-text: #ffffff;
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111113;
+      --surface: #1a1a1d;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --line: #2a2a2e;
+      --accent: #e8683f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  header .wrap { display: flex; align-items: center; justify-content: space-between; height: 68px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; text-decoration: none; }
+  .brand img { width: 30px; height: 30px; }
+  header nav a { color: var(--muted); text-decoration: none; font-size: 15px; }
+  header nav a:hover { color: var(--text); }
+
+  .hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center; padding-top: 56px; padding-bottom: 88px; }
+  h1 { font-size: clamp(36px, 5vw, 56px); line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 20px; }
+  .lead { font-size: 19px; color: var(--muted); max-width: 30em; margin: 0 0 32px; }
+  .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 22px;
+    border-radius: 999px; font-weight: 600; font-size: 16px; text-decoration: none; white-space: nowrap;
+    transition: transform .2s cubic-bezier(.16,1,.3,1), background-color .2s;
+  }
+  .btn:active { transform: translateY(1px) scale(.98); }
+  .btn-primary { background: var(--accent); color: var(--accent-text); }
+  .btn-primary:hover { background: #c4471f; }
+  .btn-ghost { border: 1px solid var(--line); color: var(--text); }
+  .btn-ghost:hover { border-color: var(--muted); }
+
+  .shot { display: flex; justify-content: center; }
+  .shot img {
+    width: 100%; max-width: 380px; height: auto; border-radius: 12px;
+    border: 1px solid var(--line);
+    box-shadow: 0 30px 80px -20px rgb(0 0 0 / .25), 0 8px 24px -8px rgb(0 0 0 / .12);
+  }
+
+  section { padding: 88px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: clamp(28px, 3.4vw, 38px); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 16px; }
+  .sub { color: var(--muted); max-width: 40em; margin: 0; font-size: 18px; }
+
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 48px; }
+  .flow h3 { font-size: 20px; margin: 0 0 8px; }
+  .flow p { margin: 0; color: var(--muted); }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+  .contents { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 0; padding: 0; list-style: none; }
+  .contents li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+  .contents li:last-child { grid-column: 1 / -1; }
+  .contents strong { display: block; margin-bottom: 2px; }
+  .contents span { color: var(--muted); font-size: 15px; }
+
+  .facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px 40px; margin-top: 40px; }
+  .facts h3 { font-size: 17px; margin: 0 0 4px; }
+  .facts p { margin: 0; color: var(--muted); }
+
+  .maker { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 40px; display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: center; }
+  .maker h2 { font-size: 28px; }
+
+  footer { padding: 40px 0 56px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+  footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  code { font: 14px ui-monospace, "SF Mono", Menlo, monospace; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+
+  .shot picture { display: contents; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .rise { animation: rise .7s cubic-bezier(.16,1,.3,1) both; }
+    .rise.d2 { animation-delay: .12s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  }
+
+  @media (max-width: 860px) {
+    .hero, .split, .maker { grid-template-columns: 1fr; }
+    .hero { padding-top: 32px; padding-bottom: 64px; gap: 40px; }
+    .flow, .facts, .contents { grid-template-columns: 1fr; }
+    section { padding: 64px 0; }
+    .maker { padding: 28px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="/"><img src="/icon.png" alt="">HandoffBar</a>
+    <nav><a href="https://github.com/Proxylang/handoff-bar">GitHub</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div class="rise">
+      <h1>Pick up any Claude Code chat where you left off.</h1>
+      <p class="lead">When a chat's cache is about to expire, HandoffBar saves a summary. Click it, paste it into a new chat, keep going.</p>
+      <div class="ctas">
+        <a class="btn btn-primary" href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg">Download for Mac</a>
+        <a class="btn btn-ghost" href="https://github.com/Proxylang/handoff-bar">View source</a>
+      </div>
+    </div>
+    <div class="shot rise d2">
+      <picture>
+        <source srcset="/panel-dark.png" media="(prefers-color-scheme: dark)">
+        <img src="/panel-light.png" width="380" height="513" alt="The HandoffBar panel: a list of recent chats with titles, project names, and times. One row says Copied to clipboard.">
+      </picture>
+    </div>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <h2>Why it exists</h2>
+      <p class="sub">Claude Code caches each chat so replies stay fast and cheap. Leave a chat alone too long and the cache expires. The next message re-reads the whole chat at full price. A fresh chat with a short handoff is cheaper and quicker.</p>
+      <div class="flow">
+        <div>
+          <h3>It watches</h3>
+          <p>Once a minute it checks your Claude Code chats and reads how long each one's cache lasts: 5 minutes or 1 hour.</p>
+        </div>
+        <div>
+          <h3>It writes</h3>
+          <p>A few minutes before a cache runs out, it saves that chat's handoff to <code>~/.claude/handoffs</code>.</p>
+        </div>
+        <div>
+          <h3>You paste</h3>
+          <p>Click the hand in your menu bar, click the chat, and paste the handoff into a new Claude Code chat.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap split">
+      <div>
+        <h2>What a handoff holds</h2>
+        <p class="sub">Plain Markdown, one file per chat. Enough for the new chat to know what you were doing, without the full history.</p>
+      </div>
+      <ul class="contents">
+        <li><strong>Title</strong><span>The name you gave the tab, or Claude's own title.</span></li>
+        <li><strong>Where</strong><span>Working folder, git branch, and the old chat file.</span></li>
+        <li><strong>Your requests</strong><span>The first one, plus the last ten.</span></li>
+        <li><strong>Changed files</strong><span>Every file the chat edited.</span></li>
+        <li><strong>Last reply</strong><span>Claude's final answer in the old chat.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Small, local, free</h2>
+      <div class="facts">
+        <div><h3>Nothing leaves your Mac</h3><p>No network calls, no account, no model calls. It only reads the chat files Claude Code already keeps.</p></div>
+        <div><h3>Signed by Apple</h3><p>Notarized, so it opens without a security warning.</p></div>
+        <div><h3>Any recent Mac</h3><p>macOS 13 or later, Apple Silicon or Intel.</p></div>
+        <div><h3>Open source</h3><p>MIT licensed. Read the code or build it yourself on GitHub.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="maker">
+        <div>
+          <h2>Made by Proxylang</h2>
+          <p class="sub">Proxylang translates websites into 77+ languages. Add one line of code and your site is live in other languages in about a minute, with per-language SEO built in.</p>
+        </div>
+        <a class="btn btn-ghost" href="https://proxylang.dev">Visit proxylang.dev</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>HandoffBar is free and MIT licensed. Not affiliated with Anthropic.</span>
+    <a href="https://github.com/Proxylang/handoff-bar">github.com/Proxylang/handoff-bar</a>
+  </div>
+</footer>
+</body>
+</html>

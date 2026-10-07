@@ -42,6 +42,7 @@ final class App: NSObject, NSApplicationDelegate {
             return
         }
         store.copiedID = nil
+        store.query = ""
         store.reload()
         NSApp.activate(ignoringOtherApps: true)
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
