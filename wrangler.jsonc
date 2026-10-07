@@ -5,5 +5,7 @@
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./site"
-  }
+  },
+  // Cloudflare creates the DNS record and certificate on deploy.
+  "routes": [{ "pattern": "handoffbar.proxylang.dev", "custom_domain": true }]
 }
