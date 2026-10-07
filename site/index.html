@@ -247,12 +247,13 @@
     <div class="wrap split">
       <div>
         <h2>Security</h2>
-        <p class="sub">Everything stays on your Mac. HandoffBar sends nothing anywhere: no network calls, no account, no analytics, no AI model.</p>
+        <p class="sub">Your chats stay on your Mac. HandoffBar never sends your chats, handoffs, or anything about you anywhere: no account, no analytics, no AI model.</p>
       </div>
       <div class="facts" style="margin-top:0">
         <div><h3>What it reads</h3><p>The chat files Claude Code already saves in <code>~/.claude/projects</code>. Nothing else on your Mac.</p></div>
         <div><h3>What it writes</h3><p>One Markdown file per chat in <code>~/.claude/handoffs</code>. The clipboard only changes when you click a chat.</p></div>
-        <div><h3>How it's built</h3><p>A native Swift app (SwiftUI and AppKit), about 700 lines, with no third-party code. The code has no network calls at all.</p></div>
+        <div><h3>How it's built</h3><p>A native Swift app (SwiftUI and AppKit), about 780 lines, with no third-party code.</p></div>
+        <div><h3>One network request</h3><p>Once a day it asks GitHub for the latest version number, so it can show an update button. That request carries no data from your Mac.</p></div>
         <div><h3>Signed and open</h3><p>Signed with a Developer ID and notarized by Apple. MIT licensed: read every line or build it yourself on GitHub.</p></div>
       </div>
     </div>

@@ -20,6 +20,7 @@ final class App: NSObject, NSApplicationDelegate {
     let icon = barSymbol("hand.point.right.fill")
     let copiedIcon = barSymbol("hand.thumbsup.fill")
     lazy var writer = HandoffWriter { [weak self] in self?.store.reload() }
+    lazy var updater = UpdateChecker { [weak self] version in self?.store.update = version }
 
     func applicationDidFinishLaunching(_ note: Notification) {
         item.button?.image = icon
@@ -33,6 +34,7 @@ final class App: NSObject, NSApplicationDelegate {
         popover.behavior = .transient
 
         writer.start()
+        updater.start()
     }
 
     @objc func toggle() {

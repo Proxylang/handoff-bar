@@ -15,6 +15,8 @@ final class Store: ObservableObject {
     @Published var copiedID: String?
     @Published var openAtLogin = SMAppService.mainApp.status == .enabled
     @Published var query = ""
+    /// The newer version GitHub reported, if any.
+    @Published var update: String?
 
     /// Search covers every handoff on disk; the list shows the newest matches.
     var visible: [Handoff] {
@@ -65,6 +67,10 @@ struct ListView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if let version = store.update {
+                UpdateBar(version: version)
+            }
+
             VStack(alignment: .leading, spacing: 2) {
                 Text("Handoffs").font(.system(size: 14, weight: .bold))
                 Text("Click a chat to copy its handoff prompt.")
@@ -164,6 +170,30 @@ struct Row: View {
     var meta: String {
         [handoff.project, ago(handoff.date)].filter { !$0.isEmpty }.joined(separator: "  ·  ")
     }
+}
+
+struct UpdateBar: View {
+    let version: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.down.circle.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor)
+            Text("Version \(version) is available").font(.system(size: 12, weight: .medium))
+            Spacer()
+            // Drawn by hand: the system's prominent button turns white when the panel is not the active window.
+            Button(action: download) {
+                Text("Download").font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                    .padding(.horizontal, 12).frame(height: 24)
+                    .background(Capsule().fill(Color.accentColor))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 8)
+        .background(Color.accentColor.opacity(0.1))
+    }
+
+    // Opens the new DMG in the browser. Installing it replaces this copy of the app.
+    func download() { NSWorkspace.shared.open(latestDownload) }
 }
 
 struct SearchField: View {

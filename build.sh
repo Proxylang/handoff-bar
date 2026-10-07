@@ -10,7 +10,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-VERSION=1.2.0
+VERSION=1.3.0
 # SMAppService (open at login) needs macOS 13.
 MIN_MACOS=13.0
 app=build/HandoffBar.app

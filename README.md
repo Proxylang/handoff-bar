@@ -45,7 +45,8 @@ HandoffBar는 그 전에 미리 준비해 둬요. 캐시가 만료되기 몇 분
 - **Open at login.** One checkbox keeps it running after a restart.
 - **Light and dark mode.** Follows your Mac's setting.
 - **Terminal, VS Code, desktop.** Works with Claude Code in the terminal, the VS Code extension, and the Claude desktop app's Code tab.
-- **Local only.** No network calls, no account, no model calls.
+- **Update notice.** When a new version is out, the panel shows a Download button.
+- **Local only.** Your chats never leave your Mac. No account, no analytics, no AI.
 
 **한국어**
 
@@ -57,7 +58,8 @@ HandoffBar는 그 전에 미리 준비해 둬요. 캐시가 만료되기 몇 분
 - **로그인 시 자동 실행.** 체크박스 하나만 켜 두면 Mac을 다시 켜도 계속 실행돼요.
 - **라이트·다크 모드.** Mac 화면 설정을 그대로 따라가요.
 - **터미널, VS Code, 데스크톱 앱 지원.** 터미널용 Claude Code, VS Code 확장 프로그램, Claude 데스크톱 앱의 Code 탭에서 모두 쓸 수 있어요.
-- **내 Mac에서만 동작.** 네트워크 연결도, 계정도, AI 모델 호출도 없어요.
+- **업데이트 알림.** 새 버전이 나오면 패널에 다운로드 버튼이 떠요.
+- **내 Mac에서만 동작.** 대화 내용은 내 Mac 밖으로 절대 나가지 않아요. 계정도, 분석 도구도, AI도 없어요.
 
 ## What a handoff contains · 핸드오프에 담기는 내용
 
@@ -109,28 +111,32 @@ Claude Code 대화의 캐시는 5분 또는 1시간 동안 유지돼요. Handoff
 
 ## Security · 보안
 
-Everything stays on your Mac. HandoffBar sends nothing anywhere: no network calls, no account, no analytics, no AI model. Nothing is processed or shared outside your machine.
+Your chats stay on your Mac. HandoffBar never sends your chats, handoffs, or anything about you anywhere: no account, no analytics, no AI model. Nothing is processed or shared outside your machine.
+
+The app makes one network request: once a day it asks GitHub for the latest HandoffBar version number, so it can tell you when an update is out. That request carries no data from your Mac.
 
 How it works:
 
 - **Reads** only the chat files Claude Code already saves in `~/.claude/projects` (one JSON line per message). It reads the cache usage numbers in them to know when a cache will expire.
 - **Writes** only one Markdown file per chat in `~/.claude/handoffs`.
 - **Copies** to your clipboard only when you click a chat.
-- **Built** as a native Swift app (SwiftUI and AppKit), about 700 lines, with no third-party code. There are no network calls anywhere in the source.
+- **Built** as a native Swift app (SwiftUI and AppKit), about 780 lines, with no third-party code. The only network code is the version check in [Updater.swift](Sources/Updater.swift).
 - **Signed** with a Developer ID, built with Apple's hardened runtime, and notarized by Apple. It is not sandboxed, because it needs to read `~/.claude`.
 
 The source is short enough to read in one sitting: [Sources/](Sources/).
 
 **한국어**
 
-모든 데이터는 내 Mac 안에만 있어요. HandoffBar는 어디에도 데이터를 보내지 않아요. 네트워크 연결, 계정, 분석 도구, AI 모델 모두 쓰지 않고, 외부에서 처리하거나 공유하는 데이터도 전혀 없어요.
+대화 내용은 내 Mac 안에만 있어요. HandoffBar는 대화, 핸드오프, 사용자 정보를 어디에도 보내지 않아요. 계정, 분석 도구, AI 모델 모두 쓰지 않고, 외부에서 처리하거나 공유하는 데이터도 전혀 없어요.
+
+네트워크 요청은 딱 하나예요. 하루에 한 번 GitHub에 최신 HandoffBar 버전 번호를 물어봐서, 업데이트가 나오면 알려 드려요. 이 요청에는 내 Mac의 데이터가 전혀 담기지 않아요.
 
 작동 방식:
 
 - **읽기:** Claude Code가 `~/.claude/projects`에 저장해 둔 대화 파일만 읽어요(메시지 하나당 JSON 한 줄). 여기에 담긴 캐시 사용량 정보로 캐시가 언제 만료될지 계산해요.
 - **쓰기:** `~/.claude/handoffs`에 대화마다 Markdown 파일 하나만 만들어요.
 - **복사:** 대화를 클릭할 때만 클립보드를 사용해요.
-- **구성:** Swift로 만든 네이티브 앱(SwiftUI, AppKit)이에요. 코드는 약 700줄이고 외부 라이브러리는 하나도 쓰지 않아요. 소스 코드 어디에도 네트워크 통신 코드가 없어요.
+- **구성:** Swift로 만든 네이티브 앱(SwiftUI, AppKit)이에요. 코드는 약 780줄이고 외부 라이브러리는 하나도 쓰지 않아요. 네트워크 코드는 [Updater.swift](Sources/Updater.swift)의 버전 확인 하나뿐이에요.
 - **서명:** Developer ID로 서명하고 Apple의 hardened runtime을 적용해 빌드했으며, Apple 공증도 받았어요. `~/.claude` 폴더를 읽어야 해서 샌드박스는 적용하지 않았어요.
 
 소스 코드는 금방 다 읽을 수 있을 만큼 짧아요: [Sources/](Sources/).
