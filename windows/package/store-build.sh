@@ -15,7 +15,7 @@ host="${1:-lotusai@100.93.144.22}"
 remote=handoffbar-build
 
 ssh -o ConnectTimeout=15 "$host" "powershell -NoProfile -Command \"New-Item -ItemType Directory -Force $remote\\package\\Assets, $remote\\package\\tools | Out-Null\""
-scp -q ./*.cs build.ps1 app.manifest HandoffBar.ico "$host:$remote/"
+scp -q ./*.cs build.ps1 app.manifest HandoffBar.ico Tray.ico "$host:$remote/"
 scp -q package/AppxManifest.xml package/package.ps1 package/store-remote.ps1 "$host:$remote/package/"
 scp -q package/Assets/*.png "$host:$remote/package/Assets/"
 scp -q package/tools/sdk-buildtools.nupkg "$host:$remote/package/tools/"

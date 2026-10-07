@@ -9,7 +9,7 @@ New-Item -ItemType Directory -Force dist | Out-Null
 
 & "$fw\csc.exe" /nologo /target:winexe /optimize+ /platform:anycpu /codepage:65001 `
   /out:dist\HandoffBar.exe /win32icon:HandoffBar.ico /win32manifest:app.manifest `
-  /resource:HandoffBar.ico,HandoffBar.ico `
+  /resource:Tray.ico,Tray.ico `
   /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll `
   /reference:System.Windows.Forms.dll /reference:"$fw\System.Web.Extensions.dll" `
   Program.cs Writer.cs Handoffs.cs Popup.cs

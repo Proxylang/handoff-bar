@@ -365,7 +365,6 @@ class Popup : Form
         list.Invalidate();
         var h = i >= 0 && i < items.Count ? items[i] as Handoff : null;
         list.Cursor = h != null ? Cursors.Hand : Cursors.Default;
-        tip.SetToolTip(list, h == null ? "" : (h.LastRequest.Length == 0 ? "Click to copy" : "Last ask: " + h.LastRequest));
     }
 
     void LeaveList(object sender, EventArgs e) { hover = -1; list.Invalidate(); }

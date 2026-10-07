@@ -73,10 +73,11 @@ class Tray : ApplicationContext
         popup.Packaged = packaged;
         var handle = popup.Handle;  // create the window now so other threads can post to it
 
-        using (var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("HandoffBar.ico"))
+        // A plain orange hand: the app icon's tile shrinks to nothing at tray size.
+        using (var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("Tray.ico"))
             // The in-memory test build (test-run.ps1) has no embedded icon; it reads the file instead.
             icon.Icon = s != null ? new Icon(s, SystemInformation.SmallIconSize)
-                : new Icon(Path.Combine(Environment.CurrentDirectory, "HandoffBar.ico"), SystemInformation.SmallIconSize);
+                : new Icon(Path.Combine(Environment.CurrentDirectory, "Tray.ico"), SystemInformation.SmallIconSize);
         icon.Text = "HandoffBar: chat handoffs";
         icon.MouseClick += Clicked;
         var menu = new ContextMenuStrip();
