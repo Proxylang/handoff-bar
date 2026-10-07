@@ -6,6 +6,11 @@
   "assets": {
     "directory": "./site"
   },
-  // Cloudflare creates the DNS record and certificate on deploy.
-  "routes": [{ "pattern": "handoffbar.proxylang.dev", "custom_domain": true }]
+  // Cloudflare creates the DNS record and certificate on deploy. The translation Worker
+  // holds a zone-wide `*/*` route on proxylang.dev, and a custom domain alone loses to it,
+  // so the more specific route is needed too (same fix as proxylang-chat-worker).
+  "routes": [
+    { "pattern": "handoffbar.proxylang.dev", "custom_domain": true },
+    { "pattern": "handoffbar.proxylang.dev/*", "zone_name": "proxylang.dev" }
+  ]
 }
