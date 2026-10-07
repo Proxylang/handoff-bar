@@ -16,20 +16,11 @@ remote=handoffbar-build
 
 ssh -o ConnectTimeout=15 "$host" "powershell -NoProfile -Command \"New-Item -ItemType Directory -Force $remote\\package\\Assets, $remote\\package\\tools | Out-Null\""
 scp -q ./*.cs build.ps1 app.manifest HandoffBar.ico "$host:$remote/"
-scp -q package/AppxManifest.xml package/package.ps1 "$host:$remote/package/"
+scp -q package/AppxManifest.xml package/package.ps1 package/store-remote.ps1 "$host:$remote/package/"
 scp -q package/Assets/*.png "$host:$remote/package/Assets/"
 scp -q package/tools/sdk-buildtools.nupkg "$host:$remote/package/tools/"
 
-ssh "$host" "powershell -NoProfile -ExecutionPolicy Bypass -Command \"
-  \$ErrorActionPreference = 'Stop'
-  Set-Location $remote
-  # A .nupkg is a zip file.
-  Copy-Item package\\tools\\sdk-buildtools.nupkg package\\tools\\sdk.zip -Force
-  Expand-Archive package\\tools\\sdk.zip package\\tools\\sdk -Force
-  \$makeappx = (Get-ChildItem package\\tools\\sdk\\bin -Recurse -Filter makeappx.exe | Where-Object { \$_.FullName -match '\\\\x64\\\\' } | Select-Object -First 1).FullName
-  & .\\build.ps1
-  & .\\package\\package.ps1 -MakeAppx \$makeappx
-\""
+ssh "$host" "powershell -NoProfile -ExecutionPolicy Bypass -File $remote\\package\\store-remote.ps1"
 
 mkdir -p dist
 scp -q "$host:$remote/dist/HandoffBar.msix" dist/
