@@ -53,6 +53,7 @@
 
   .hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center; padding-top: 56px; padding-bottom: 88px; }
   h1 { font-size: clamp(36px, 5vw, 56px); line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 20px; }
+  .h1-note { display: block; margin-top: 10px; font-size: .5em; letter-spacing: -0.01em; color: var(--accent); }
   .lead { font-size: 19px; color: var(--muted); max-width: 30em; margin: 0 0 32px; }
   .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
   .btn {
@@ -173,7 +174,7 @@
 <main>
   <div class="wrap hero">
     <div class="rise">
-      <h1>Pick up any Claude Code chat where you left off.</h1>
+      <h1>Pick up any Claude Code chat where you left off <span class="h1-note">(without wasting tokens)</span></h1>
       <p class="lead">Before a chat's cache expires, HandoffBar saves a summary. Paste it into a new chat and keep going, instead of paying to reload the old one.</p>
       <div class="ctas">
         <a class="btn btn-primary" href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg">Download for Mac</a>
