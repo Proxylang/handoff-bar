@@ -3,3 +3,4 @@ dist/
 AppIcon.iconset/
 .DS_Store
 windows/dist/
+windows/package/tools/
