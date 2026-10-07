@@ -1,0 +1,9 @@
+// Cloudflare Worker that serves the static website in site/. No server code.
+{
+  // Must match the project name in the Cloudflare dashboard.
+  "name": "handoff-bar",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./site"
+  }
+}
