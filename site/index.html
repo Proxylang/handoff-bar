@@ -82,6 +82,7 @@
   .flow p { margin: 0; color: var(--muted); }
 
   .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+  .split .facts { grid-template-columns: 1fr; gap: 22px; }
   .contents { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 0; padding: 0; list-style: none; }
   .contents li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
   .contents li:last-child { grid-column: 1 / -1; }
@@ -173,7 +174,7 @@
   <div class="wrap hero">
     <div class="rise">
       <h1>Pick up any Claude Code chat where you left off.</h1>
-      <p class="lead">When a chat's cache is about to expire, HandoffBar saves a summary. Click it, paste it into a new chat, keep going.</p>
+      <p class="lead">Before a chat's cache expires, HandoffBar saves a summary. Paste it into a new chat and keep going, instead of paying to reload the old one.</p>
       <div class="ctas">
         <a class="btn btn-primary" href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg">Download for Mac</a>
         <a class="btn btn-ghost" href="https://github.com/Proxylang/handoff-bar">View source</a>
@@ -232,10 +233,23 @@
         <div><h3>Your tab names</h3><p>Chats show the name you gave the tab, even if you rename it after the handoff was saved.</p></div>
         <div><h3>Easy to scan</h3><p>Chats are grouped by day, with the project and how long ago. Hover one to see your last request.</p></div>
         <div><h3>Open at login</h3><p>One checkbox keeps it running after a restart. Light and dark mode follow your Mac.</p></div>
-        <div><h3>Nothing leaves your Mac</h3><p>No network calls, no account, no model calls. It only reads the chat files Claude Code already keeps.</p></div>
-        <div><h3>Signed by Apple</h3><p>Notarized, so it opens without a security warning.</p></div>
+        <div><h3>Terminal, VS Code, desktop</h3><p>Works with Claude Code in the terminal, the VS Code extension, and the Code tab of the Claude desktop app.</p></div>
         <div><h3>Any recent Mac</h3><p>macOS 13 or later, Apple Silicon or Intel.</p></div>
-        <div><h3>Open source</h3><p>MIT licensed. Read the code or build it yourself on GitHub.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap split">
+      <div>
+        <h2>Security</h2>
+        <p class="sub">Everything stays on your Mac. HandoffBar sends nothing anywhere: no network calls, no account, no analytics, no AI model.</p>
+      </div>
+      <div class="facts" style="margin-top:0">
+        <div><h3>What it reads</h3><p>The chat files Claude Code already saves in <code>~/.claude/projects</code>. Nothing else on your Mac.</p></div>
+        <div><h3>What it writes</h3><p>One Markdown file per chat in <code>~/.claude/handoffs</code>. The clipboard only changes when you click a chat.</p></div>
+        <div><h3>How it's built</h3><p>A native Swift app (SwiftUI and AppKit), about 550 lines, with no third-party code. The code has no network calls at all.</p></div>
+        <div><h3>Signed and open</h3><p>Signed with a Developer ID and notarized by Apple. MIT licensed: read every line or build it yourself on GitHub.</p></div>
       </div>
     </div>
   </section>

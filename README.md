@@ -21,7 +21,9 @@ You can see when this happens. Claude Code shows a red clock in the message box,
 
 <p align="center"><img src="site/cache-expired.jpg" width="530" alt="Claude Code message box with a red clock. The tooltip says: Prompt cache likely expired (idle 1h 2m)."></p>
 
-HandoffBar saves you before that point. A few minutes before a chat's cache expires, it saves a **handoff**: a short Markdown summary of that chat. Click the hand in your menu bar, click the chat, and paste the handoff into a new Claude Code chat to keep going.
+HandoffBar saves you before that point. A few minutes before a chat's cache expires, it saves a **handoff**: a short Markdown summary of that chat. Click the hand in your menu bar, click the chat, and paste the handoff into a new Claude Code chat. You keep going in the new chat instead of paying to reload the old one.
+
+It works with Claude Code in the terminal, the VS Code extension, and the Code tab of the Claude desktop app. All three save chats to the same place.
 
 **한국어**
 
@@ -29,7 +31,9 @@ Claude Code는 대화마다 캐시를 저장해서 답변을 빠르고 저렴하
 
 캐시가 만료되면 Claude Code 입력창에 빨간 시계가 나타납니다. 마우스를 올리면 위 그림처럼 "Prompt cache likely expired (idle 1h 2m)"라고 표시됩니다.
 
-HandoffBar는 그 전에 대비합니다. 캐시가 만료되기 몇 분 전에 **핸드오프**를 저장합니다. 핸드오프는 그 대화를 짧게 정리한 Markdown 요약입니다. 메뉴 막대의 손 아이콘을 누르고 대화를 클릭한 다음, 새 Claude Code 대화에 붙여넣으면 이어서 작업할 수 있습니다.
+HandoffBar는 그 전에 대비합니다. 캐시가 만료되기 몇 분 전에 **핸드오프**를 저장합니다. 핸드오프는 그 대화를 짧게 정리한 Markdown 요약입니다. 메뉴 막대의 손 아이콘을 누르고 대화를 클릭한 다음, 새 Claude Code 대화에 붙여넣으세요. 이전 대화를 다시 읽는 비용을 내지 않고 새 대화에서 바로 이어서 작업할 수 있습니다.
+
+터미널의 Claude Code, VS Code 확장 프로그램, Claude 데스크톱 앱의 Code 탭에서 모두 작동합니다. 세 곳 모두 같은 위치에 대화를 저장하기 때문입니다.
 
 ## Features · 기능
 
@@ -40,6 +44,7 @@ HandoffBar는 그 전에 대비합니다. 캐시가 만료되기 몇 분 전에 
 - **Easy to scan.** Chats are grouped by day, with the project and how long ago. Hover a chat to see your last request.
 - **Open at login.** One checkbox keeps it running after a restart.
 - **Light and dark mode.** Follows your Mac's setting.
+- **Terminal, VS Code, desktop.** Works with Claude Code in the terminal, the VS Code extension, and the Claude desktop app's Code tab.
 - **Local only.** No network calls, no account, no model calls.
 
 **한국어**
@@ -51,6 +56,7 @@ HandoffBar는 그 전에 대비합니다. 캐시가 만료되기 몇 분 전에 
 - **한눈에 보기.** 날짜별로 묶고, 프로젝트와 경과 시간을 함께 보여줍니다. 대화에 마우스를 올리면 마지막 요청이 보입니다.
 - **로그인 시 실행.** 체크박스 하나로 Mac을 다시 켜도 계속 실행됩니다.
 - **라이트·다크 모드.** Mac 설정을 따릅니다.
+- **터미널, VS Code, 데스크톱.** 터미널의 Claude Code, VS Code 확장 프로그램, Claude 데스크톱 앱의 Code 탭에서 모두 작동합니다.
 - **로컬 전용.** 네트워크 호출, 계정, 모델 호출이 없습니다.
 
 ## What a handoff contains · 핸드오프에 담기는 내용
@@ -91,13 +97,33 @@ Claude Code 대화의 캐시는 5분 또는 1시간 동안 유지됩니다. Hand
 
 그 대화에 새 답변이 오면 타이머가 다시 시작됩니다. 임시 폴더에서 시작된 대화(보통 Claude Code를 실행하는 스크립트)는 건너뜁니다.
 
-## Privacy · 개인정보
+## Security · 보안
 
-Everything happens on your Mac. HandoffBar makes no network calls, needs no account, and calls no model. It only reads the chat files Claude Code already keeps and writes Markdown files next to them.
+Everything stays on your Mac. HandoffBar sends nothing anywhere: no network calls, no account, no analytics, no AI model. Nothing is processed or shared outside your machine.
+
+How it works:
+
+- **Reads** only the chat files Claude Code already saves in `~/.claude/projects` (one JSON line per message). It reads the cache usage numbers in them to know when a cache will expire.
+- **Writes** only one Markdown file per chat in `~/.claude/handoffs`.
+- **Copies** to your clipboard only when you click a chat.
+- **Built** as a native Swift app (SwiftUI and AppKit), about 550 lines, with no third-party code. There are no network calls anywhere in the source.
+- **Signed** with a Developer ID, built with Apple's hardened runtime, and notarized by Apple. It is not sandboxed, because it needs to read `~/.claude`.
+
+The source is short enough to read in one sitting: [Sources/](Sources/).
 
 **한국어**
 
-모든 작업은 내 Mac 안에서만 이루어집니다. 네트워크 호출, 계정, 모델 호출이 없습니다. Claude Code가 이미 저장하고 있는 대화 파일만 읽고, 그 옆에 Markdown 파일을 씁니다.
+모든 데이터는 내 Mac 안에만 머뭅니다. HandoffBar는 어디로도 아무것도 보내지 않습니다. 네트워크 호출, 계정, 분석 도구, AI 모델이 없습니다. 외부에서 처리하거나 공유하는 데이터가 전혀 없습니다.
+
+작동 방식:
+
+- **읽기:** Claude Code가 이미 `~/.claude/projects`에 저장하는 대화 파일만 읽습니다(메시지마다 JSON 한 줄). 그 안의 캐시 사용량 숫자로 캐시 만료 시점을 계산합니다.
+- **쓰기:** `~/.claude/handoffs`에 대화마다 Markdown 파일 하나만 씁니다.
+- **복사:** 대화를 클릭할 때만 클립보드에 복사합니다.
+- **구성:** Swift로 만든 네이티브 앱(SwiftUI, AppKit)이며 약 550줄이고, 외부 라이브러리를 쓰지 않습니다. 소스 코드 어디에도 네트워크 호출이 없습니다.
+- **서명:** Developer ID로 서명하고, Apple의 hardened runtime으로 빌드했으며, Apple의 공증을 받았습니다. `~/.claude`를 읽어야 하므로 샌드박스는 쓰지 않습니다.
+
+소스 코드는 한 번에 다 읽을 수 있을 만큼 짧습니다: [Sources/](Sources/).
 
 ## Install · 설치
 
