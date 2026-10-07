@@ -219,6 +219,10 @@
         <li><strong>Title</strong><span>The name you gave the tab, or Claude's own title.</span></li>
         <li><strong>Where</strong><span>Working folder, git branch, and the old chat file.</span></li>
         <li><strong>Your requests</strong><span>The first one, plus the last ten.</span></li>
+        <li><strong>Your choices</strong><span>When Claude asked you to pick, the question, the options, and your answer.</span></li>
+        <li><strong>Next steps</strong><span>The to-do list Claude left at the end of the chat.</span></li>
+        <li><strong>Running things</strong><span>Dev servers and other commands Claude started in the background.</span></li>
+        <li><strong>Last error</strong><span>If something failed in the final few steps.</span></li>
         <li><strong>Changed files</strong><span>Every file the chat edited.</span></li>
         <li><strong>Last reply</strong><span>Claude's final answer in the old chat.</span></li>
       </ul>
@@ -248,7 +252,7 @@
       <div class="facts" style="margin-top:0">
         <div><h3>What it reads</h3><p>The chat files Claude Code already saves in <code>~/.claude/projects</code>. Nothing else on your Mac.</p></div>
         <div><h3>What it writes</h3><p>One Markdown file per chat in <code>~/.claude/handoffs</code>. The clipboard only changes when you click a chat.</p></div>
-        <div><h3>How it's built</h3><p>A native Swift app (SwiftUI and AppKit), about 550 lines, with no third-party code. The code has no network calls at all.</p></div>
+        <div><h3>How it's built</h3><p>A native Swift app (SwiftUI and AppKit), about 700 lines, with no third-party code. The code has no network calls at all.</p></div>
         <div><h3>Signed and open</h3><p>Signed with a Developer ID and notarized by Apple. MIT licensed: read every line or build it yourself on GitHub.</p></div>
       </div>
     </div>

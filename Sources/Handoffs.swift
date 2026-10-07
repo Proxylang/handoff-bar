@@ -37,8 +37,8 @@ struct Handoff: Identifiable {
         fromTempFolder = !folder.hasPrefix(NSHomeDirectory())
         project = fromTempFolder ? "" : (folder as NSString).lastPathComponent
         // The last numbered line under "Recent requests" is the newest ask. Shown on hover.
-        lastRequest = lines.drop { !$0.hasPrefix("## Recent requests") }
-            .prefix { !$0.hasPrefix("## Files") && !$0.hasPrefix("## Last reply") }
+        lastRequest = lines.drop { !$0.hasPrefix("## Recent requests") }.dropFirst()
+            .prefix { !$0.hasPrefix("## ") }
             .last { $0.first?.isNumber == true } ?? ""
     }
 }

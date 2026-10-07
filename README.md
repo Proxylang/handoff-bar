@@ -64,20 +64,30 @@ HandoffBar는 그 전에 미리 준비해 둬요. 캐시가 만료되기 몇 분
 - The chat's title (the name you gave the tab, or the title Claude Code generated)
 - The working folder, git branch, and path to the old chat file
 - Your first request and your last 10 requests
+- Choices you made when Claude asked you to pick (the question, its options, and your answer)
+- The next steps Claude listed at the end of the chat
+- Commands Claude started in the background, such as dev servers
+- The last error, if it happened in the final few steps
+- Claude's own summary of the chat, if the chat got long enough for Claude Code to summarize it
 - The files the chat edited
 - Claude's last reply
 
-Handoffs are saved in `~/.claude/handoffs/`, one file per chat, named by chat id.
+Handoffs are saved in `~/.claude/handoffs/`, one file per chat, named by chat id. HandoffBar builds them by reading the chat file. It does not use AI and does not run any commands on your Mac.
 
 **한국어**
 
 - 대화 제목 (탭에 직접 붙인 이름 또는 Claude Code가 자동으로 만든 제목)
 - 작업 폴더, git 브랜치, 이전 대화 파일 경로
 - 첫 요청과 최근 요청 10개
+- Claude가 선택을 물었을 때 내가 고른 답 (질문, 선택지, 내 답변)
+- 대화 끝에 Claude가 정리한 다음 할 일
+- Claude가 백그라운드로 실행한 명령 (개발 서버 등)
+- 마지막 몇 단계에서 난 오류
+- 대화가 길어져 Claude Code가 요약을 만들었다면, 그 요약
 - 그 대화에서 수정한 파일 목록
 - Claude의 마지막 답변
 
-핸드오프는 `~/.claude/handoffs/` 폴더에 대화마다 하나씩, 대화 ID를 파일 이름으로 저장돼요.
+핸드오프는 `~/.claude/handoffs/` 폴더에 대화마다 하나씩, 대화 ID를 파일 이름으로 저장돼요. HandoffBar는 대화 파일을 읽어서 핸드오프를 만들어요. AI를 쓰지 않고, 내 Mac에서 어떤 명령도 실행하지 않아요.
 
 ## When handoffs are written · 핸드오프 저장 시점
 
@@ -106,7 +116,7 @@ How it works:
 - **Reads** only the chat files Claude Code already saves in `~/.claude/projects` (one JSON line per message). It reads the cache usage numbers in them to know when a cache will expire.
 - **Writes** only one Markdown file per chat in `~/.claude/handoffs`.
 - **Copies** to your clipboard only when you click a chat.
-- **Built** as a native Swift app (SwiftUI and AppKit), about 550 lines, with no third-party code. There are no network calls anywhere in the source.
+- **Built** as a native Swift app (SwiftUI and AppKit), about 700 lines, with no third-party code. There are no network calls anywhere in the source.
 - **Signed** with a Developer ID, built with Apple's hardened runtime, and notarized by Apple. It is not sandboxed, because it needs to read `~/.claude`.
 
 The source is short enough to read in one sitting: [Sources/](Sources/).
@@ -120,7 +130,7 @@ The source is short enough to read in one sitting: [Sources/](Sources/).
 - **읽기:** Claude Code가 `~/.claude/projects`에 저장해 둔 대화 파일만 읽어요(메시지 하나당 JSON 한 줄). 여기에 담긴 캐시 사용량 정보로 캐시가 언제 만료될지 계산해요.
 - **쓰기:** `~/.claude/handoffs`에 대화마다 Markdown 파일 하나만 만들어요.
 - **복사:** 대화를 클릭할 때만 클립보드를 사용해요.
-- **구성:** Swift로 만든 네이티브 앱(SwiftUI, AppKit)이에요. 코드는 약 550줄이고 외부 라이브러리는 하나도 쓰지 않아요. 소스 코드 어디에도 네트워크 통신 코드가 없어요.
+- **구성:** Swift로 만든 네이티브 앱(SwiftUI, AppKit)이에요. 코드는 약 700줄이고 외부 라이브러리는 하나도 쓰지 않아요. 소스 코드 어디에도 네트워크 통신 코드가 없어요.
 - **서명:** Developer ID로 서명하고 Apple의 hardened runtime을 적용해 빌드했으며, Apple 공증도 받았어요. `~/.claude` 폴더를 읽어야 해서 샌드박스는 적용하지 않았어요.
 
 소스 코드는 금방 다 읽을 수 있을 만큼 짧아요: [Sources/](Sources/).

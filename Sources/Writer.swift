@@ -25,6 +25,22 @@ let recentPrompts = 10
 let promptChars = 500
 let lastReplyChars = 1500
 let maxFiles = 40
+// Claude's own summary of a chat that ran out of room. Long chats produce ~20,000 characters;
+// the first part holds the goal and decisions, the rest is detail the new chat can read itself.
+let summaryChars = 8000
+// A reply this short is an answer to a choice ("A", "2"). Longer answers must start like one.
+let decisionAnswerChars = 3
+let maxDecisions = 8
+let questionChars = 200
+// "Pick one:" is followed by the options; keep that many so the answer makes sense.
+let maxOptions = 4
+let optionChars = 140
+let maxBackgroundCommands = 6
+let commandChars = 160
+let maxNextSteps = 10
+// An error followed by more tool results than this was most likely fixed already.
+let recentErrorWindow = 3
+let errorChars = 600
 
 final class HandoffWriter {
     private let queue = DispatchQueue(label: "handoff-writer", qos: .utility)
@@ -129,12 +145,83 @@ private func userText(_ o: [String: Any]) -> String {
 
 private func cut(_ s: String, _ n: Int) -> String { s.count <= n ? s : s.prefix(n) + " ..." }
 
+private func oneLine(_ s: String) -> String {
+    s.split(whereSeparator: \.isNewline).joined(separator: " ").trimmingCharacters(in: .whitespaces)
+}
+
+private func blockText(_ content: Any?) -> String {
+    if let s = content as? String { return s }
+    return (content as? [[String: Any]] ?? []).compactMap { $0["text"] as? String }.joined(separator: "\n")
+}
+
+// A line that asks the user to choose: ends in "?", or says pick / choose / which / reply "X" or "Y".
+private let questionLine = try! NSRegularExpression(
+    pattern: #"\?[*_]*\s*$|\b(pick one|choose|which one)\b|reply\s+["“][^"”]{1,20}["”]\s+or\b"#,
+    options: [.caseInsensitive])
+// A heading that starts a list of next steps.
+private let nextStepsHeading = try! NSRegularExpression(
+    pattern: #"^[#*\s]*(next steps?|what you need to do next|to-?do)\b"#, options: [.caseInsensitive])
+private let listItem = try! NSRegularExpression(pattern: #"^\s*([-*•]|\d+[.)])\s+"#)
+
+private func matches(_ re: NSRegularExpression, _ s: String) -> Bool {
+    re.firstMatch(in: s, range: NSRange(s.startIndex..., in: s)) != nil
+}
+
+// Starts like an answer to a choice: "A", "2", "yes", "B, please", "option 1".
+private let answerStart = try! NSRegularExpression(
+    pattern: #"^\s*(option\s*)?([a-d]|[1-5]|yes|yep|yeah|no|nope|ok|okay|sure|both|neither)\b"#,
+    options: [.caseInsensitive])
+
+private func plain(_ line: String) -> String {
+    line.replacingOccurrences(of: #"^\s*([-*•]|\d+[.)])\s+"#, with: "", options: .regularExpression)
+        .replacingOccurrences(of: "**", with: "")
+        .trimmingCharacters(in: .whitespaces)
+}
+
+/// The last line in a reply that asks the user to choose. Options listed right under it
+/// ("Pick one:", "How should I land it?") come along.
+private func question(in reply: String) -> String? {
+    let lines = reply.split(whereSeparator: \.isNewline).map(String.init)
+    // Quoted lines are drafts shown to the user, not questions to them.
+    let asks = lines.indices.filter { !lines[$0].hasPrefix(">") && matches(questionLine, lines[$0]) }
+    func options(after i: Int) -> ArraySlice<String> {
+        lines[(i + 1)...].drop { $0.trimmingCharacters(in: .whitespaces).isEmpty }
+            .prefix { matches(listItem, $0) }.prefix(maxOptions)
+    }
+    // "Pick one:" with its options beats a later bare "Reply A or B" that only points back at them.
+    guard let i = asks.last(where: { !options(after: $0).isEmpty }) ?? asks.last else { return nil }
+    var found = Array(options(after: i))
+    // A bare "Reply A or B": the lettered options are elsewhere in the reply.
+    if found.isEmpty { found = Array(lines.filter { matches(letteredOption, $0) }.prefix(maxOptions)) }
+    return cut(plain(lines[i]), questionChars) + found.map { "\n    - " + cut(plain($0), optionChars) }.joined()
+}
+
+// "A. Wait.", "**B. Build it now.**", "- **A.** ...": a lettered option.
+private let letteredOption = try! NSRegularExpression(pattern: #"^\s*(-\s+)?(\*\*)?[A-D][.):](\*\*)?\s"#)
+
+private func isAnswer(_ text: String) -> Bool {
+    text.count <= decisionAnswerChars || (text.count <= 80 && matches(answerStart, text))
+}
+
+/// The list under a "Next steps" style heading in a reply.
+private func nextSteps(in reply: String) -> [String] {
+    let lines = reply.split(whereSeparator: \.isNewline).map(String.init)
+    guard let start = lines.lastIndex(where: { matches(nextStepsHeading, $0) }) else { return [] }
+    return Array(lines[(start + 1)...].drop { $0.trimmingCharacters(in: .whitespaces).isEmpty }
+        .prefix { matches(listItem, $0) }
+        .prefix(maxNextSteps))
+}
+
 /// Builds ~/.claude/handoffs/<chat id>.md. Returns false if the file could not be read or written.
 func writeHandoff(_ chat: URL) -> Bool {
     guard let data = try? Data(contentsOf: chat) else { return false }
-    var title = "", customTitle = "", cwd = "", branch = "", lastReply = ""
+    var title = "", customTitle = "", cwd = "", branch = "", lastReply = "", summary = ""
     var prompts: [String] = []
     var files: [String] = []  // oldest first, each path once
+    var decisions: [String] = []
+    var background: [String] = []
+    var commands: [String: String] = [:]  // tool use id -> what it ran
+    var lastError = "", resultsSinceError = Int.max
 
     for o in jsonLines(data) {
         let sidechain = o["isSidechain"] as? Bool == true
@@ -148,17 +235,53 @@ func writeHandoff(_ chat: URL) -> Bool {
             // First folder, not the last: the chat may cd into a subfolder later.
             if cwd.isEmpty { cwd = o["cwd"] as? String ?? "" }
             if branch.isEmpty { branch = o["gitBranch"] as? String ?? "" }
+            let content = (o["message"] as? [String: Any])?["content"]
+            if o["isCompactSummary"] as? Bool == true {
+                // Claude Code's own summary, written when the chat ran out of room.
+                summary = blockText(content)
+                continue
+            }
+            for b in content as? [[String: Any]] ?? [] where b["type"] as? String == "tool_result" {
+                resultsSinceError = resultsSinceError == Int.max ? Int.max : resultsSinceError + 1
+                guard b["is_error"] as? Bool == true else { continue }
+                let text = blockText(b["content"])
+                // The user turning down a tool call is a choice, not a failure.
+                if text.contains("doesn't want to proceed") { continue }
+                let what = commands[b["tool_use_id"] as? String ?? ""].map { "\($0)\n" } ?? ""
+                lastError = what + cut(text.trimmingCharacters(in: .whitespacesAndNewlines), errorChars)
+                resultsSinceError = 0
+            }
             let text = userText(o)
-            if !text.isEmpty { prompts.append(text) }
+            guard !text.isEmpty else { continue }
+            prompts.append(text)
+            if isAnswer(text), let q = question(in: lastReply) {
+                let entry = "- Asked: \(q)\n  Answer: \(oneLine(text))"
+                // A message sent twice is one choice.
+                if decisions.last != entry { decisions.append(entry) }
+            }
         case "assistant" where !sidechain:
             for b in (o["message"] as? [String: Any])?["content"] as? [[String: Any]] ?? [] {
+                let input = b["input"] as? [String: Any] ?? [:]
                 if b["type"] as? String == "text", let t = b["text"] as? String,
                    !t.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     lastReply = t.trimmingCharacters(in: .whitespacesAndNewlines)
-                } else if b["type"] as? String == "tool_use", ["Edit", "Write"].contains(b["name"] as? String),
-                          let p = (b["input"] as? [String: Any])?["file_path"] as? String {
-                    files.removeAll { $0 == p }
-                    files.append(p)
+                } else if b["type"] as? String == "tool_use" {
+                    let name = b["name"] as? String ?? ""
+                    if ["Edit", "Write"].contains(name), let p = input["file_path"] as? String {
+                        files.removeAll { $0 == p }
+                        files.append(p)
+                    }
+                    if name == "Bash", let cmd = input["command"] as? String {
+                        let line = cut(oneLine(cmd), commandChars)
+                        commands[b["id"] as? String ?? ""] = "Command: `\(line)`"
+                        if input["run_in_background"] as? Bool == true {
+                            let label = (input["description"] as? String).map { "\($0): " } ?? ""
+                            background.removeAll { $0.hasSuffix("`\(line)`") }
+                            background.append("- \(label)`\(line)`")
+                        }
+                    } else if !name.isEmpty {
+                        commands[b["id"] as? String ?? ""] = "Tool: \(name)"
+                    }
                 }
             }
         default:
@@ -178,11 +301,33 @@ func writeHandoff(_ chat: URL) -> Bool {
         "- Old chat file: \(chat.path)",
         "",
     ]
+    if !summary.isEmpty {
+        lines += ["## Claude's summary of the earlier part of the chat", "", cut(summary, summaryChars), ""]
+    }
     if let first = prompts.first {
         lines += ["## First request", "", cut(first, promptChars * 2), ""]
         lines += ["## Recent requests, oldest first", ""]
         lines += prompts.suffix(recentPrompts).enumerated().map { "\($0.offset + 1). \(cut($0.element, promptChars))" }
         lines.append("")
+    }
+    if !decisions.isEmpty {
+        lines += ["## Choices the user made, oldest first. Do not reopen them.", ""]
+        lines += decisions.suffix(maxDecisions)
+        lines.append("")
+    }
+    let steps = nextSteps(in: lastReply)
+    if !steps.isEmpty {
+        lines += ["## Next steps listed at the end of the old chat", ""]
+        lines += steps
+        lines.append("")
+    }
+    if !background.isEmpty {
+        lines += ["## Started in the background in the old chat. Check if still running.", ""]
+        lines += background.suffix(maxBackgroundCommands)
+        lines.append("")
+    }
+    if !lastError.isEmpty, resultsSinceError < recentErrorWindow {
+        lines += ["## Last error in the old chat", "", "```", lastError, "```", ""]
     }
     if !files.isEmpty {
         lines += ["## Files changed in the old chat, oldest first", ""]
