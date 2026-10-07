@@ -77,8 +77,19 @@ class Popup : Form
     readonly ToolTip tip = new ToolTip();
     Font titleFont, rowTitleFont, metaFont, idFont, headerFont, iconFont;
 
-    float S { get { return DeviceDpi / 96f; } }
-    int Px(float v) { return (int)Math.Round(v * S); }
+    [DllImport("user32.dll")] static extern uint GetDpiForWindow(IntPtr hwnd);
+
+    // Screen scale (1.25 at 125%). Form.DeviceDpi stays at 96 in .NET Framework apps without an
+    // app.config switch, while fonts do scale, so the layout read the window's DPI directly.
+    float scale = 1f;
+    int Px(float v) { return (int)Math.Round(v * scale); }
+
+    float CurrentScale()
+    {
+        try { var dpi = GetDpiForWindow(Handle); if (dpi > 0) return dpi / 96f; }
+        catch (EntryPointNotFoundException) { }  // Windows 10 before 1607
+        using (var g = CreateGraphics()) return g.DpiX / 96f;
+    }
 
     public Popup(string handoffDir)
     {
@@ -160,6 +171,10 @@ class Popup : Form
         Reload();
         PlaceNearTray();
         Show();
+        // Once shown, the window takes the scale of the screen it is on. Lay out and place it
+        // again in case that screen differs from the one it was hidden on.
+        Rebuild();
+        PlaceNearTray();
         // The grey hint text needs the box's window to exist, so it is set after Show.
         SendMessage(search.Handle, 0x1501 /* EM_SETCUEBANNER */, (IntPtr)1, "Search chats");
         Activate();
@@ -175,6 +190,8 @@ class Popup : Form
     void Rebuild()
     {
         theme = Theme.Current();
+        // Row heights are measured when items are added, so the scale must be current first.
+        scale = CurrentScale();
         var q = search.Text.Trim();
         var matches = q.Length == 0 ? all : all.Where(h =>
             h.Title.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0 ||

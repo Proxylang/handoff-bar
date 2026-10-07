@@ -23,8 +23,9 @@ using Microsoft.Win32;
 
 static class App
 {
-    // Kept equal to VERSION in build.sh: one GitHub release carries both the Mac and Windows builds.
-    public const string Version = "1.3.0";
+    // Shares version numbers with VERSION in build.sh; one GitHub release carries both builds.
+    // 1.3.1 is Windows-only: the fix for screens scaled above 100%.
+    public const string Version = "1.3.1";
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     static extern int GetCurrentPackageFullName(ref int length, StringBuilder name);

@@ -6,6 +6,8 @@
 # Close it with the tray icon's right-click menu > Quit HandoffBar.
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
+# Set-Location moves only PowerShell. The app reads HandoffBar.ico from .NET's own current folder.
+[Environment]::CurrentDirectory = $PSScriptRoot
 
 $fw = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319"
 $lines = (@('Program.cs', 'Writer.cs', 'Handoffs.cs', 'Popup.cs') | ForEach-Object { Get-Content $_ -Raw -Encoding UTF8 }) -join "`n" -split "`n"
