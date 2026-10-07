@@ -5,7 +5,7 @@
 <h1 align="center">HandoffBar</h1>
 
 <p align="center">Pick up any <a href="https://claude.com/claude-code">Claude Code</a> chat where you left off (without wasting tokens).<br>
-Claude Code 대화, 토큰 낭비 없이 멈춘 곳에서 바로 이어가세요.<br>
+캐시가 만료돼도, Claude Code 대화를 토큰 낭비 없이 하던 그대로 이어가세요.<br>
 <a href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg"><b>Download for Mac · Mac용 다운로드</b></a> · <a href="https://handoffbar.proxylang.dev">Website · 웹사이트</a></p>
 
 <p align="center"><picture>
