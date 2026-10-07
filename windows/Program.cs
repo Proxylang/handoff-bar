@@ -73,7 +73,9 @@ class Tray : ApplicationContext
         var handle = popup.Handle;  // create the window now so other threads can post to it
 
         using (var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("HandoffBar.ico"))
-            icon.Icon = new Icon(s, SystemInformation.SmallIconSize);
+            // The in-memory test build (test-run.ps1) has no embedded icon; it reads the file instead.
+            icon.Icon = s != null ? new Icon(s, SystemInformation.SmallIconSize)
+                : new Icon(Path.Combine(Environment.CurrentDirectory, "HandoffBar.ico"), SystemInformation.SmallIconSize);
         icon.Text = "HandoffBar: chat handoffs";
         icon.MouseClick += Clicked;
         var menu = new ContextMenuStrip();
