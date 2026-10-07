@@ -9,6 +9,9 @@
 <meta property="og:description" content="Saves a handoff prompt before a chat's cache expires. Click to copy it into a new chat.">
 <meta property="og:image" content="https://handoffbar.proxylang.dev/icon.png">
 <link rel="icon" href="/favicon.png">
+<!-- Proxylang language switcher, same site key as proxylang.dev. It mounts into #proxylang-widget. -->
+<link rel="preconnect" href="https://proxy.proxylang.dev" crossorigin="anonymous">
+<script src="https://proxy.proxylang.dev/script.js" data-key="pk_d719039385d2cee957b9" defer crossorigin="anonymous"></script>
 <style>
   :root {
     --bg: #fafaf9;
@@ -44,6 +47,7 @@
   header .wrap { display: flex; align-items: center; justify-content: space-between; height: 68px; }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; text-decoration: none; }
   .brand img { width: 30px; height: 30px; }
+  header nav { display: flex; align-items: center; gap: 16px; }
   header nav a { color: var(--muted); text-decoration: none; font-size: 15px; }
   header nav a:hover { color: var(--text); }
 
@@ -158,7 +162,10 @@
 <header>
   <div class="wrap">
     <a class="brand" href="/"><img src="/icon.png" alt="">HandoffBar</a>
-    <nav><a href="https://github.com/Proxylang/handoff-bar">GitHub</a></nav>
+    <nav>
+      <div id="proxylang-widget"></div>
+      <a href="https://github.com/Proxylang/handoff-bar" target="_blank" rel="noopener">GitHub</a>
+    </nav>
   </div>
 </header>
 
