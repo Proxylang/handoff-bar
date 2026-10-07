@@ -1,13 +1,14 @@
 # Builds HandoffBar.msix for the Microsoft Store. The Store signs it, so no certificate is needed here.
 #
-#   powershell -ExecutionPolicy Bypass -File package.ps1 -IdentityName <name> -Publisher "CN=..." -PublisherDisplayName <name>
+#   powershell -ExecutionPolicy Bypass -File package.ps1
 #
-# The three values are on Partner Center > the app > Product identity.
+# The identity values are from Partner Center > HandoffBar > Product identity (Store ID 9NSK9P03T9CN).
+# They are public: they appear in every installed copy of the package.
 # Needs makeappx.exe from the Windows SDK. Run ..\build.ps1 first.
 param(
-  [Parameter(Mandatory)] [string] $IdentityName,
-  [Parameter(Mandatory)] [string] $Publisher,
-  [Parameter(Mandatory)] [string] $PublisherDisplayName,
+  [string] $IdentityName = 'TitusDecali.HandoffBar',
+  [string] $Publisher = 'CN=B5528A34-7773-43DD-983A-0FB38E3CFFCD',
+  [string] $PublisherDisplayName = 'Titus Decali',
   [string] $MakeAppx
 )
 $ErrorActionPreference = 'Stop'
