@@ -1,3 +1,5 @@
+<a href="https://proxylang.dev/?utm_source=handoffbar&utm_medium=github&utm_campaign=getstarted15"><img src="site/proxylang-banner.png" width="880" alt="Made by Proxylang. Proxylang translates websites: 77 languages from one line of code. 15% off your first month."></a>
+
 <p align="center"><img src="site/icon.png" width="128" alt="HandoffBar icon"></p>
 
 <h1 align="center">HandoffBar</h1>
@@ -5,13 +7,27 @@
 <p align="center">Pick up any <a href="https://claude.com/claude-code">Claude Code</a> chat where you left off.<br>
 <a href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg"><b>Download for Mac</b></a> · <a href="https://handoffbar.proxylang.dev">Website</a></p>
 
-<p align="center"><img src="site/panel-light.png" width="380" alt="The HandoffBar panel: recent chats with titles, project names, and times"></p>
+<p align="center"><picture>
+<source media="(prefers-color-scheme: dark)" srcset="site/panel-dark.png">
+<img src="site/panel-light.png" width="380" alt="The HandoffBar panel: a search box above recent chats with titles, project names, and times">
+</picture></p>
 
 ## What it does
 
 Claude Code caches each chat so replies stay fast and cheap. Leave a chat alone too long and the cache expires. The next message then re-reads the whole chat at full price.
 
 HandoffBar watches your chats. A few minutes before a chat's cache expires, it saves a **handoff**: a short Markdown summary of that chat. Click the hand in your menu bar, click the chat, and paste the handoff into a new Claude Code chat to keep going.
+
+## Features
+
+- **Saves handoffs on time.** Each chat's handoff is written a few minutes before its cache expires. HandoffBar works out per chat whether the cache lasts 5 minutes or 1 hour.
+- **One click to copy.** Click a chat and its handoff prompt is on your clipboard, ready to paste.
+- **Search.** Type to filter by chat title, project, or chat id. Search covers every saved handoff.
+- **Your tab names.** Chats show the name you gave the tab, even if you rename it after the handoff was saved.
+- **Easy to scan.** Chats are grouped by day, with the project and how long ago. Hover a chat to see your last request.
+- **Open at login.** One checkbox keeps it running after a restart.
+- **Light and dark mode.** Follows your Mac's setting.
+- **Local only.** No network calls, no account, no model calls.
 
 ## What a handoff contains
 
