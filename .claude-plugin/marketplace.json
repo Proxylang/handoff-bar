@@ -1,0 +1,6 @@
+{
+  "name": "handoff-bar",
+  "description": "HandoffBar for Claude Code: prompt cache countdown and chat handoffs.",
+  "owner": { "name": "Titus Decali" },
+  "plugins": [{ "name": "handoffbar", "source": "./mod" }]
+}
