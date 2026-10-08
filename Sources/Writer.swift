@@ -10,9 +10,16 @@ let handoffDir = claudeDir.appendingPathComponent("handoffs")
 let scanInterval: TimeInterval = 60
 // The longest cache Anthropic offers. A chat file untouched for longer has no live cache.
 let longestCache: TimeInterval = 3600
-// Chats with a 5-minute cache (Pro, API) get a shorter warning than 1-hour chats (Max),
-// or the handoff would be written the moment each reply lands.
-func warnSeconds(cache: TimeInterval) -> TimeInterval { cache >= longestCache ? 300 : 120 }
+// Every chat gets a handoff after 3 quiet minutes: 2 minutes before a 5-minute cache runs out.
+// A chat's cache can switch between 5 minutes and 1 hour (account or plan change), so 1-hour
+// chats get this early save too. Writing sooner, as each reply lands, would rewrite the file nonstop.
+let firstSave: TimeInterval = 180
+// 1-hour chats are saved again 5 minutes before the end, which moves them back to the top of the list.
+let lastSave: TimeInterval = 300
+/// Seconds after the last reply at which the handoff is written.
+func saveTimes(cache: TimeInterval) -> [TimeInterval] {
+    cache >= longestCache ? [firstSave, cache - lastSave] : [firstSave]
+}
 // Enough of the file end to hold the last few replies and their cache usage.
 let tailBytes = 512 * 1024
 // Claude Code names a chat's project folder after its working folder. These are temp folders,
@@ -45,8 +52,8 @@ let errorChars = 600
 final class HandoffWriter {
     private let queue = DispatchQueue(label: "handoff-writer", qos: .utility)
     private var timer: DispatchSourceTimer?
-    // Chat file path -> the last request a handoff was written for. A new reply re-arms the chat.
-    private var written: [String: Date] = [:]
+    // Chat file path -> the last request and how many of its save times are done. A new reply re-arms the chat.
+    private var written: [String: (request: Date, saves: Int)] = [:]
     private let onWrite: () -> Void
 
     init(onWrite: @escaping () -> Void) { self.onWrite = onWrite }
@@ -72,9 +79,11 @@ final class HandoffWriter {
                 guard let mtime = try? chat.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
                       now.timeIntervalSince(mtime) < longestCache,
                       let (lastRequest, cache) = cacheState(chat) else { continue }
-                let left = lastRequest.addingTimeInterval(cache).timeIntervalSince(now)
-                guard left > 0, left <= warnSeconds(cache: cache), written[chat.path] != lastRequest else { continue }
-                written[chat.path] = lastRequest
+                let quiet = now.timeIntervalSince(lastRequest)
+                let due = saveTimes(cache: cache).filter { quiet >= $0 }.count
+                let done = written[chat.path].flatMap { $0.request == lastRequest ? $0.saves : nil } ?? 0
+                guard quiet < cache, due > done else { continue }
+                written[chat.path] = (lastRequest, due)
                 if writeHandoff(chat) { wrote = true }
             }
         }

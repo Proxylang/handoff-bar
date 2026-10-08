@@ -109,7 +109,7 @@ class Popup : Form
 
         title.Text = "Handoffs";
         subtitle.Text = "Click a chat to copy its handoff prompt.";
-        empty.Text = "No handoffs yet. A chat shows up here a few minutes before its cache runs out.";
+        empty.Text = "No handoffs yet. A chat shows up here 3 minutes after its last reply.";
         loginNote.Text = "Starts with Windows. Change it in Task Manager > Startup apps.";
         atLogin.Text = "Open at login";
         openFolder.Text = "Open folder";
@@ -210,7 +210,7 @@ class Popup : Form
         foreach (var i in items) list.Items.Add(i);
         list.EndUpdate();
         empty.Text = all.Count == 0
-            ? "No handoffs yet. A chat shows up here a few minutes before its cache runs out."
+            ? "No handoffs yet. A chat shows up here 3 minutes after its last reply."
             : "No chats match “" + q + "”.";
         LayoutAll();
     }

@@ -52,9 +52,19 @@ static class Writer
     const int ScanIntervalMs = 60 * 1000;
     // The longest cache Anthropic offers. A chat file untouched for longer has no live cache.
     const double LongestCacheSeconds = 3600;
-    // Chats with a 5-minute cache (Pro, API) get a shorter warning than 1-hour chats (Max),
-    // or the handoff would be written the moment each reply lands.
-    static double WarnSeconds(double cache) { return cache >= LongestCacheSeconds ? 300 : 120; }
+    // Every chat gets a handoff after 3 quiet minutes: 2 minutes before a 5-minute cache runs out.
+    // A chat's cache can switch between 5 minutes and 1 hour (account or plan change), so 1-hour
+    // chats get this early save too. Writing sooner, as each reply lands, would rewrite the file nonstop.
+    const double FirstSaveSeconds = 180;
+    // 1-hour chats are saved again 5 minutes before the end, which moves them back to the top of the list.
+    const double LastSaveSeconds = 300;
+    /// Seconds after the last reply at which the handoff is written.
+    static double[] SaveTimes(double cache)
+    {
+        return cache >= LongestCacheSeconds
+            ? new[] { FirstSaveSeconds, cache - LastSaveSeconds }
+            : new[] { FirstSaveSeconds };
+    }
     // Enough of the file end to hold the last few replies and their cache usage.
     const int TailBytes = 512 * 1024;
     // Claude Code names a chat's project folder after its working folder. These are temp folders,
@@ -89,8 +99,8 @@ static class Writer
     const int ErrorChars = 600;
 
     static System.Threading.Timer timer;
-    // Chat file path -> the last request a handoff was written for. A new reply re-arms the chat.
-    static readonly Dictionary<string, DateTime> written = new Dictionary<string, DateTime>();
+    // Chat file path -> the last request and how many of its save times are done. A new reply re-arms the chat.
+    static readonly Dictionary<string, Tuple<DateTime, int>> written = new Dictionary<string, Tuple<DateTime, int>>();
 
     public static void Start(Action onWrite)
     {
@@ -114,10 +124,12 @@ static class Writer
                     if ((now - File.GetLastWriteTimeUtc(chat)).TotalSeconds >= LongestCacheSeconds) continue;
                     DateTime last; double cache;
                     if (!CacheState(chat, out last, out cache)) continue;
-                    var left = (last.AddSeconds(cache) - now).TotalSeconds;
-                    DateTime done;
-                    if (left <= 0 || left > WarnSeconds(cache) || (written.TryGetValue(chat, out done) && done == last)) continue;
-                    written[chat] = last;
+                    var quiet = (now - last).TotalSeconds;
+                    var due = SaveTimes(cache).Count(t => quiet >= t);
+                    Tuple<DateTime, int> prev;
+                    var done = written.TryGetValue(chat, out prev) && prev.Item1 == last ? prev.Item2 : 0;
+                    if (quiet >= cache || due <= done) continue;
+                    written[chat] = Tuple.Create(last, due);
                     if (WriteHandoff(chat, Paths.Handoffs)) wrote = true;
                 }
                 catch (IOException) { }

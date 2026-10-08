@@ -86,7 +86,7 @@ struct ListView: View {
             Divider()
 
             if store.handoffs.isEmpty {
-                Text("No handoffs yet. A chat shows up here a few minutes before its cache runs out.")
+                Text("No handoffs yet. A chat shows up here 3 minutes after its last reply.")
                     .font(.system(size: 12)).foregroundStyle(.secondary)
                     .padding(16)
             } else if store.visible.isEmpty {

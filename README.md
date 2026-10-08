@@ -95,8 +95,10 @@ Handoffs are saved in `~/.claude/handoffs/`, one file per chat, named by chat id
 
 Each Claude Code chat gets a cache that lasts either 5 minutes or 1 hour. HandoffBar checks your chat files in `~/.claude/projects/` once a minute and reads which cache each chat got from the usage data Claude Code saves. Then it writes the handoff:
 
-- 5 minutes before a 1-hour cache expires
-- 2 minutes before a 5-minute cache expires
+- 3 minutes after the last reply, for every chat. That is 2 minutes before a 5-minute cache expires.
+- Again 5 minutes before a 1-hour cache expires. The chat moves back to the top of the list.
+
+A chat's cache can switch between 5 minutes and 1 hour, for example after you sign in to a different account. The 3-minute save means a handoff is ready either way.
 
 A new reply in that chat resets the timer. Chats started in a temp folder (usually scripts running Claude Code) are skipped.
 
@@ -104,8 +106,10 @@ A new reply in that chat resets the timer. Chats started in a temp folder (usual
 
 Claude Code 대화의 캐시는 5분 또는 1시간 동안 유지돼요. HandoffBar는 1분마다 `~/.claude/projects/` 폴더의 대화 파일을 살펴보고, Claude Code가 기록해 둔 사용량 데이터로 대화별 캐시 길이를 확인해요. 그리고 아래 시점에 핸드오프를 저장해요.
 
-- 1시간 캐시: 만료 5분 전
-- 5분 캐시: 만료 2분 전
+- 모든 대화: 마지막 답변 3분 후. 5분 캐시라면 만료 2분 전이에요.
+- 1시간 캐시: 만료 5분 전에 한 번 더 저장해요. 그 대화가 목록 맨 위로 다시 올라와요.
+
+다른 계정으로 로그인하면 대화 캐시가 5분과 1시간 사이에서 바뀔 수 있어요. 3분 저장 덕분에 어느 쪽이든 핸드오프가 준비돼 있어요.
 
 그 대화에 새 답변이 오면 타이머는 처음부터 다시 시작돼요. 임시 폴더에서 시작된 대화(대개 스크립트가 Claude Code를 실행한 경우)는 건너뛰어요.
 
