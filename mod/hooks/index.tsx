@@ -28,6 +28,17 @@ let state: { lastRequest: number; cache: number; isTooBig: boolean } | undefined
 // The last reply a save was made for, and how many of its save times are done.
 let written: { request: number; saves: number } | undefined
 let isTicking = false
+// Errors already shown in the chat. A repeat goes to the debug log only, so a lasting
+// problem does not add a line every second.
+const shownErrors = new Set<string>()
+
+function report($: $, error: unknown) {
+  const text = `HandoffBar: ${String(error)}`
+  $.ui.log(text, { to: shownErrors.has(text) ? 'debug' : 'transcript' })
+  shownErrors.add(text)
+}
+
+const ago = (minutes: number) => (minutes === 0 ? 'just now' : `${minutes} min ago`)
 
 async function home($: $): Promise<string> {
   return (await $.env.get('HOME')) ?? (await $.env.get('USERPROFILE')) ?? ''
@@ -65,6 +76,10 @@ async function writeHandoff($: $, found: Chat): Promise<{ path: string; text: st
 
 /** Writes the handoff now and copies it. The answer is one line for the person. */
 async function handoffNow($: $, surface?: Parameters<$['ui']['copy']>[0]['surface']): Promise<string> {
+  return writeAndCopy($, surface).catch(error => `HandoffBar could not write the handoff: ${String(error)}`)
+}
+
+async function writeAndCopy($: $, surface?: Parameters<$['ui']['copy']>[0]['surface']): Promise<string> {
   const found = await findChat($)
   if (found === undefined) return 'This chat has no saved messages yet.'
   const { size } = await $.fs.stat(found.path)
@@ -92,10 +107,10 @@ async function tick($: $) {
     seenMtime = stat.mtimeMs
     const before = state?.lastRequest
     if (stat.size <= readLimit) {
-      const read = cacheState(await $.fs.read(found.path))
-      state = read && { ...read, isTooBig: false }
+      const parsed = cacheState(await $.fs.read(found.path))
+      state = parsed && { ...parsed, isTooBig: false }
       // Claude Code picks the cache length per account, so a long chat uses the last one seen.
-      if (read) await $.store.set('cache', read.cache)
+      if (parsed) await $.store.set('cache', parsed.cache)
     } else {
       // Too long to read: the file's last write stands in for the last reply.
       const cache = Number((await $.store.get('cache')) ?? 300)
@@ -110,7 +125,7 @@ async function tick($: $) {
   const minutes = left > 0 ? null : Math.floor(-left / 60)
   if ((await read($, expiredFor)) !== minutes) await update($, expiredFor, () => minutes)
   const clock = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`
-  $.ui.status(left > 0 ? `Prompt cache: ${clock} left` : `Prompt cache: expired ${minutes} min ago`)
+  $.ui.status(minutes === null ? `Prompt cache: ${clock} left` : `Prompt cache: expired ${ago(minutes)}`)
 
   const isTemp = tempProjectPrefixes.some(p => found.project.startsWith(p))
   if (state.isTooBig || isTemp) return
@@ -133,7 +148,7 @@ export const register: Register = on => {
       if (isTicking) return
       isTicking = true
       tick($)
-        .catch(error => $.ui.log(`HandoffBar: ${String(error)}`))
+        .catch(error => report($, error))
         .finally(() => (isTicking = false))
     })
 
@@ -148,12 +163,11 @@ export const register: Register = on => {
       return next(e)
     }
     const { Box, Button, Text } = $.ui.resolve(e)
-    const ago = minutes === 0 ? 'just now' : `${minutes} min ago`
 
     return (
       <Box flexDirection="column">
         <Text color="yellow">
-          This chat's prompt cache expired {ago}. Your next message re-sends the whole chat at full price.
+          This chat's prompt cache expired {ago(minutes)}. Your next message re-sends the whole chat at full price.
         </Text>
         <Box>
           <Button

@@ -27,7 +27,7 @@ const TEXT = [
   .join('\n')
 
 /** Answers every call the mod makes on $ beneath it, and records what it writes. */
-function world(on: On) {
+function world(on: On, readable = true) {
   const clock = mock.clock(on, { now: REPLY_AT })
   mock.store(on)
   mock.env(on, { HOME })
@@ -44,7 +44,7 @@ function world(on: On) {
   on('fs.list', () => ({ value: [] }))
   on('fs.exists', ($, e) => ({ value: e.path === CHAT }))
   on('fs.stat', () => ({ value: { kind: 'file', size: TEXT.length, mtimeMs: REPLY_AT, isLink: false } }))
-  on('fs.read', ($, e) => ({ value: e.path === CHAT ? TEXT : '' }))
+  on('fs.read', ($, e) => (readable ? { value: e.path === CHAT ? TEXT : '' } : { deny: 'disk unplugged' }))
   on('fs.write', ($, e) => {
     writes.set(e.path, e.text)
     return { value: undefined }
@@ -88,9 +88,31 @@ test('status counts down, then the handoff is saved 3 minutes after the reply', 
   await clock.advance(1000)
   expect(status.at(-1)).toBe('Prompt cache: 1:59 left')
   expect(writes.get(OUT)).toBe(buildHandoff(TEXT, CHAT))
+  await clock.set(REPLY_AT + 5 * 60_000 + 10_000)
+  await clock.advance(1000)
+  expect(status.at(-1)).toBe('Prompt cache: expired just now')
   await clock.set(REPLY_AT + 7 * 60_000)
   await clock.advance(1000)
   expect(status.at(-1)).toBe('Prompt cache: expired 2 min ago')
+})
+
+test('an error that repeats every second is shown in the chat once', async ($, on) => {
+  const { clock } = world(on, false)
+  const logs: string[] = []
+  on('ui.log', ($, e) => {
+    if (e.to === 'transcript') logs.push(e.text)
+    return { value: undefined }
+  })
+  await start($)
+  await clock.advance(5000)
+  expect(logs.length).toBe(1)
+  const { text } = await $.command.run({
+    command: 'handoff',
+    args: '',
+    origin: { kind: 'composer' },
+    presentation: { isFullscreen: false, columns: 80 },
+  })
+  expect(text).toMatch(/^HandoffBar could not write the handoff: /)
 })
 
 test('the warning shows above the prompt once the cache has expired', async ($, on) => {
