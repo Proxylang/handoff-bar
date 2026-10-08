@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HandoffBar - keep your Claude Code chats going</title>
-<meta name="description" content="A free Mac menu bar app. Before a Claude Code chat's cache expires, HandoffBar saves a handoff prompt. Click to copy it into a new chat.">
+<meta name="description" content="A free app for Mac and Windows. Before a Claude Code chat's cache expires, HandoffBar saves a handoff prompt. Click to copy it into a new chat.">
 <meta property="og:title" content="HandoffBar for Claude Code">
 <meta property="og:description" content="Saves a handoff prompt before a chat's cache expires. Click to copy it into a new chat.">
 <meta property="og:image" content="https://handoffbar.proxylang.dev/icon.png">
@@ -54,7 +54,7 @@
   header nav a { color: var(--muted); text-decoration: none; font-size: 15px; }
   header nav a:hover { color: var(--text); }
 
-  .hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center; padding-top: 56px; padding-bottom: 88px; }
+  .hero { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 56px; align-items: center; padding-top: 56px; padding-bottom: 88px; }
   h1 { font-size: clamp(36px, 5vw, 56px); line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 20px; }
   .h1-note { display: block; margin-top: 10px; font-size: .5em; letter-spacing: -0.01em; color: var(--accent); }
   .lead { font-size: 19px; color: var(--muted); max-width: 30em; margin: 0 0 32px; }
@@ -185,6 +185,7 @@
       <p class="lead">Before a chat's cache expires, HandoffBar saves a summary. Paste it into a new chat and keep going, instead of paying to reload the old one.</p>
       <div class="ctas">
         <a class="btn btn-primary" href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg">Download for Mac</a>
+        <a class="btn btn-primary" href="https://apps.microsoft.com/detail/9nsk9p03t9cn">Download for Windows</a>
         <a class="btn btn-ghost" href="https://github.com/Proxylang/handoff-bar">View source</a>
       </div>
     </div>
@@ -211,7 +212,7 @@
         </div>
         <div>
           <h3>You paste</h3>
-          <p>Click the hand in your menu bar, click the chat, and paste the handoff into a new Claude Code chat.</p>
+          <p>Click the hand in your Mac menu bar or Windows taskbar, click the chat, and paste the handoff into a new Claude Code chat.</p>
         </div>
       </div>
     </div>
@@ -244,9 +245,9 @@
         <div><h3>Search every chat</h3><p>Type to filter by title, project, or chat id. Search covers every saved handoff.</p></div>
         <div><h3>Your tab names</h3><p>Chats show the name you gave the tab, even if you rename it after the handoff was saved.</p></div>
         <div><h3>Easy to scan</h3><p>Chats are grouped by day, with the project and how long ago. Hover one to see your last request.</p></div>
-        <div><h3>Open at login</h3><p>One checkbox keeps it running after a restart. Light and dark mode follow your Mac.</p></div>
+        <div><h3>Open at login</h3><p>One checkbox keeps it running after a restart. Light and dark mode follow your system setting.</p></div>
         <div><h3>Terminal, VS Code, desktop</h3><p>Works with Claude Code in the terminal, the VS Code extension, and the Code tab of the Claude desktop app.</p></div>
-        <div><h3>Any recent Mac</h3><p>macOS 13 or later, Apple Silicon or Intel. Windows version coming to the Microsoft Store.</p></div>
+        <div><h3>Mac and Windows</h3><p>macOS 13 or later, Apple Silicon or Intel. Windows 10 (version 1809) or later, from the Microsoft Store.</p></div>
       </div>
     </div>
   </section>
@@ -255,14 +256,14 @@
     <div class="wrap split">
       <div>
         <h2>Security</h2>
-        <p class="sub">Your chats stay on your Mac. HandoffBar never sends your chats, handoffs, or anything about you anywhere: no account, no analytics, no AI model.</p>
+        <p class="sub">Your chats stay on your computer. HandoffBar never sends your chats, handoffs, or anything about you anywhere: no account, no analytics, no AI model.</p>
       </div>
       <div class="facts" style="margin-top:0">
-        <div><h3>What it reads</h3><p>The chat files Claude Code already saves in <code>~/.claude/projects</code>. Nothing else on your Mac.</p></div>
+        <div><h3>What it reads</h3><p>The chat files Claude Code already saves in <code>~/.claude/projects</code>. Nothing else on your computer.</p></div>
         <div><h3>What it writes</h3><p>One Markdown file per chat in <code>~/.claude/handoffs</code>. The clipboard only changes when you click a chat.</p></div>
-        <div><h3>How it's built</h3><p>A native Swift app (SwiftUI and AppKit), about 780 lines, with no third-party code.</p></div>
-        <div><h3>One network request</h3><p>Once a day it asks GitHub for the latest version number, so it can show an update button. That request carries no data from your Mac.</p></div>
-        <div><h3>Signed and open</h3><p>Signed with a Developer ID and notarized by Apple. MIT licensed: read every line or build it yourself on GitHub.</p></div>
+        <div><h3>How it's built</h3><p>The Mac app is native Swift (SwiftUI and AppKit), about 780 lines. The Windows app is C# (WinForms), about 1,100 lines. Neither uses third-party code.</p></div>
+        <div><h3>One network request</h3><p>Once a day the Mac app asks GitHub for the latest version number, so it can show an update button. That request carries no data from your Mac. The Windows app makes no requests at all; the Microsoft Store handles its updates.</p></div>
+        <div><h3>Signed and open</h3><p>The Mac app is signed with a Developer ID and notarized by Apple. The Windows app is signed by the Microsoft Store. MIT licensed: read every line or build it yourself on GitHub.</p></div>
       </div>
     </div>
   </section>

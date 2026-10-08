@@ -6,7 +6,7 @@
 
 <p align="center">Pick up any <a href="https://claude.com/claude-code">Claude Code</a> chat where you left off (without wasting tokens).<br>
 캐시가 만료돼도, Claude Code 대화를 토큰 낭비 없이 하던 그대로 이어가세요.<br>
-<a href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg"><b>Download for Mac · Mac용 다운로드</b></a> · <a href="https://handoffbar.proxylang.dev">Website · 웹사이트</a></p>
+<a href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg"><b>Download for Mac · Mac용 다운로드</b></a> · <a href="https://apps.microsoft.com/detail/9nsk9p03t9cn"><b>Download for Windows · Windows용 다운로드</b></a> · <a href="https://handoffbar.proxylang.dev">Website · 웹사이트</a></p>
 
 <p align="center"><picture>
 <source media="(prefers-color-scheme: dark)" srcset="site/panel-dark.png">
@@ -155,7 +155,7 @@ Needs macOS 13 or later. Works on Apple Silicon and Intel. The app is signed and
 
 If you use a menu bar manager such as Ice or Bartender, it may hide the new icon. Drag it into the visible part of the menu bar.
 
-**Windows:** a Windows version is on its way to the Microsoft Store. Its source is in [windows/](windows/).
+**Windows:** get HandoffBar from the [Microsoft Store](https://apps.microsoft.com/detail/9nsk9p03t9cn). It needs Windows 10 (version 1809) or later. The hand sits in the taskbar corner; if Windows hides it, drag it out of the ^ overflow menu. The Store signs and updates it. Its source is in [windows/](windows/).
 
 **한국어**
 
@@ -167,7 +167,7 @@ macOS 13 이상에서 동작하고, Apple Silicon과 Intel Mac을 모두 지원�
 
 Ice나 Bartender 같은 메뉴 막대 정리 앱을 쓰고 있다면 새 아이콘이 숨겨질 수 있어요. 그럴 땐 아이콘을 메뉴 막대의 보이는 영역으로 끌어다 놓으세요.
 
-**Windows:** Windows 버전은 곧 Microsoft Store에 올라와요. 소스 코드는 [windows/](windows/) 폴더에 있어요.
+**Windows:** [Microsoft Store](https://apps.microsoft.com/detail/9nsk9p03t9cn)에서 HandoffBar를 받으세요. Windows 10(버전 1809) 이상에서 동작해요. 손 아이콘은 작업 표시줄 오른쪽 구석에 있어요. 보이지 않으면 ^ 메뉴에서 꺼내 작업 표시줄로 끌어다 놓으세요. 서명과 업데이트는 Microsoft Store가 맡아요. 소스 코드는 [windows/](windows/) 폴더에 있어요.
 
 ## Build from source · 소스에서 빌드
 
