@@ -1,6 +1,7 @@
 // HandoffBar inside Claude Code: a countdown of this chat's prompt cache in the status line,
 // a warning above the prompt once it has expired, /handoff, and the same automatic saves as
-// the menu bar app. It only reads chat files and writes ~/.claude/handoffs/<chat id>.md.
+// the menu bar app. At start it also writes the handoffs other recent chats are missing.
+// It only reads chat files and writes ~/.claude/handoffs/<chat id>.md.
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
@@ -12,11 +13,18 @@ const readLimit = 4 * 1024 * 1024
 const tickMs = 1000
 // A chat file appears with the first message. Until then, look for it this often.
 const searchMs = 30_000
+// At start, other chats changed this recently get a handoff if theirs is missing or older than
+// the chat. Older chats are rarely continued, and the limit keeps the first run short.
+const catchUpMs = 7 * 24 * 60 * 60 * 1000
 
 // Minutes since this chat's cache expired; null while it is live or unknown.
 const expiredFor = atom({ plugin: 'handoffbar', key: 'expiredFor' } as const, null)
 // The person hid the warning for this expiry. A new reply shows it again next time.
 const isHidden = atom({ plugin: 'handoffbar', key: 'isHidden' } as const, false)
+// What the last Copy handoff press did, shown in the band for noticeMs. The engine's toast is a
+// dim line at the screen's bottom, easy to miss, so the band says it where the person looked.
+const notice = atom({ plugin: 'handoffbar', key: 'notice' } as const, null)
+const noticeMs = 6000
 
 type Chat = { id: string; path: string; project: string }
 type $ = EngineInterface
@@ -28,6 +36,16 @@ let state: { lastRequest: number; cache: number; isTooBig: boolean } | undefined
 // The last reply a save was made for, and how many of its save times are done.
 let written: { request: number; saves: number } | undefined
 let isTicking = false
+// The HandoffBar icon is a hand pointing right; this emoji is the same hand and every terminal
+// draws it. The orange is the site's accent in dark mode, where most terminals run.
+const copyLabel = '👉 Copy handoff'
+const brandOrange = '#e8683f'
+// Claude Code refuses a command name the user's own command or skill has, so the second
+// name is used when the first is taken.
+const commandNames = ['handoff', 'handoffbar']
+let command: string | undefined
+// Other chats still waiting for their handoff, newest first. Built on the first tick.
+let waiting: Chat[] | undefined
 // Errors already shown in the chat. A repeat goes to the debug log only, so a lasting
 // problem does not add a line every second.
 const shownErrors = new Set<string>()
@@ -83,11 +101,13 @@ async function writeAndCopy($: $, surface?: Parameters<$['ui']['copy']>[0]['surf
   const found = await findChat($)
   if (found === undefined) return 'This chat has no saved messages yet.'
   const { size } = await $.fs.stat(found.path)
-  if (size > readLimit) {
+  const saved = `${await home($)}/.claude/handoffs/${found.id}.md`
+  if (size > readLimit && !(await $.fs.exists(saved))) {
     const mb = Math.round(size / 1024 / 1024)
     return `This chat file is ${mb} MB. A Claude Code mod can read files up to 4 MB, so the HandoffBar menu bar app writes this one.`
   }
-  const { path, text } = await writeHandoff($, found)
+  // Too long to read: copy the handoff the menu bar app saved.
+  const { path, text } = size > readLimit ? { path: saved, text: await $.fs.read(saved) } : await writeHandoff($, found)
   const copied = await $.ui.copy({ text, surface })
   return copied.isCopied
     ? `Handoff saved to ${path} and copied. Paste it into a new chat.`
@@ -138,46 +158,111 @@ async function tick($: $) {
   }
 }
 
+/** Other chats from the last week whose handoff is missing or older than the chat. One file per
+ * chat id, so a chat already saved by the menu bar app or another session is never repeated. */
+async function staleChats($: $): Promise<Chat[]> {
+  const claude = `${await home($)}/.claude`
+  const id = await $.session.id()
+  const since = (await $.clock.now()) - catchUpMs
+  const saved = new Map((await $.fs.list(`${claude}/handoffs`).catch(() => [])).map(e => [e.name, e.mtimeMs]))
+  const found: (Chat & { mtimeMs: number })[] = []
+  for (const dir of await $.fs.list(`${claude}/projects`).catch(() => [])) {
+    if (dir.kind !== 'dir' || tempProjectPrefixes.some(p => dir.name.startsWith(p))) continue
+    for (const file of await $.fs.list(`${claude}/projects/${dir.name}`).catch(() => [])) {
+      const chatId = file.name.replace(/\.jsonl$/, '')
+      if (file.kind !== 'file' || chatId === file.name || chatId === id) continue
+      if (file.mtimeMs < since || file.size > readLimit) continue
+      if ((saved.get(`${chatId}.md`) ?? -1) >= file.mtimeMs) continue
+      const path = `${claude}/projects/${dir.name}/${file.name}`
+      found.push({ id: chatId, path, project: dir.name, mtimeMs: file.mtimeMs })
+    }
+  }
+  return found.sort((a, b) => b.mtimeMs - a.mtimeMs)
+}
+
+/** Writes the next waiting chat's handoff, one per call so a long list does not slow the session. */
+async function catchUp($: $) {
+  waiting ??= await staleChats($)
+  const next = waiting.shift()
+  if (next !== undefined) await writeHandoff($, next)
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await $.command.register({
-      name: 'handoff',
-      description: "Write this chat's handoff now and copy it",
-    })
+    for (const name of commandNames) {
+      const registered = await $.command
+        .register({ name, description: "Write this chat's handoff now and copy it" })
+        .catch(() => undefined)
+      if (registered !== undefined) {
+        command = name
+        break
+      }
+    }
     $.clock.every(tickMs, () => {
       if (isTicking) return
       isTicking = true
       tick($)
         .catch(error => report($, error))
+        .then(() => catchUp($))
+        // Another chat's file: not this chat's problem, so not shown in it.
+        .catch(error => $.ui.log(`HandoffBar: ${String(error)}`, { to: 'debug' }))
         .finally(() => (isTicking = false))
     })
 
     return next(e)
   })
 
-  on('command.run', { command: 'handoff' }, async $ => ({ text: await handoffNow($) }))
+  // Only the name this mod registered: a user's own /handoff stays theirs.
+  on('command.run', async ($, e, next) => (e.command === command ? { text: await handoffNow($) } : next(e)))
 
+  // The Copy handoff button is always there, so the person never has to type a message (which
+  // would re-send the chat) to get the handoff. A press only copies: nothing is sent.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    if (e.props.hasSurvey || e.props.isWorking) return next(e)
     const minutes = await read($, expiredFor)
-    if (minutes === null || e.props.hasSurvey || e.props.isWorking || (await read($, isHidden))) {
-      return next(e)
-    }
+    const isWarning = minutes !== null && !(await read($, isHidden))
+    const shown = await read($, notice)
     const { Box, Button, Text } = $.ui.resolve(e)
 
     return (
       <Box flexDirection="column">
-        <Text color="yellow">
-          This chat's prompt cache expired {ago(minutes)}. Your next message re-sends the whole chat at full price.
-        </Text>
-        <Box>
-          <Button
-            key="write"
-            label="Write handoff"
-            variant="primary"
-            onPress={async press => $.ui.toast(await handoffNow($, press.surface))}
-          />
-          <Text> </Text>
-          <Button key="hide" label="Hide" onPress={() => update($, isHidden, () => true)} />
+        {shown !== null && (
+          <Text color={shown.includes(' and copied.') ? 'green' : 'yellow'}>
+            {shown.includes(' and copied.') ? `✓ ${shown}` : shown}
+          </Text>
+        )}
+        {isWarning && (
+          <Text color="yellow">
+            This chat's prompt cache expired {ago(minutes)}. Your next message re-sends the whole chat at full price.
+          </Text>
+        )}
+        <Box justifyContent={isWarning ? 'flex-start' : 'flex-end'}>
+          {/* While the cache is live, a small dim link on the right that lights up under the pointer.
+              The keyed Box is the area the pointer hovers. */}
+          {/* Outside the fullscreen layout the terminal keeps the mouse for selecting text, so a
+              click never reaches the button. The keys do: ctrl+x tab focuses this band, then c. */}
+          {/* A plain Button draws its hotkey ("c: label") itself; the full button does not. */}
+          {e.viewport?.isFullscreen === false && (
+            <Text dimColor>{isWarning ? 'ctrl+x tab, then c: ' : 'ctrl+x tab, then '}</Text>
+          )}
+          <Box key="copy-area">
+            <Button
+              key="copy"
+              hotkey="c"
+              label={copyLabel}
+              plain={isWarning ? undefined : true}
+              dimColor={!isWarning}
+              hover={{ color: brandOrange, dimColor: false }}
+              variant={isWarning ? 'primary' : undefined}
+              onPress={async press => {
+                const text = await handoffNow($, press.surface)
+                await update($, notice, () => text)
+                $.clock.after(noticeMs, () => update($, notice, shown => (shown === text ? null : shown)))
+              }}
+            />
+          </Box>
+          {isWarning && <Text> </Text>}
+          {isWarning && <Button key="hide" label="Hide" onPress={() => update($, isHidden, () => true)} />}
         </Box>
       </Box>
     )

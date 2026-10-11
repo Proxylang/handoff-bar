@@ -74,6 +74,10 @@ class Popup : Form
     readonly SmoothList list = new SmoothList();
     readonly CheckBox atLogin = new CheckBox();
     readonly Label loginNote = new Label(), openFolder = new Label(), quit = new Label(), download = new Label();
+    readonly Panel modBar = new Panel();
+    readonly Label modTitle = new Label(), modText = new Label(), modCopy = new Label();
+    // Keeps the mod bar up, saying "Copied", until the panel closes.
+    bool modJustCopied;
     readonly ToolTip tip = new ToolTip();
     Font titleFont, rowTitleFont, metaFont, idFont, headerFont, iconFont;
 
@@ -115,10 +119,13 @@ class Popup : Form
         openFolder.Text = "Open folder";
         quit.Text = "Quit";
         download.Text = "Download";
-        foreach (var l in new[] { title, subtitle, empty, updateText, loginNote, openFolder, quit, download }) { l.AutoSize = false; l.UseMnemonic = false; }
+        modTitle.Text = "Also works in the Claude Code terminal as a mod";
+        modCopy.Text = "Copy install line";
+        foreach (var l in new[] { title, subtitle, empty, updateText, loginNote, openFolder, quit, download, modTitle, modText, modCopy }) { l.AutoSize = false; l.UseMnemonic = false; }
         empty.TextAlign = ContentAlignment.TopLeft;
-        openFolder.Cursor = quit.Cursor = download.Cursor = Cursors.Hand;
-        download.TextAlign = ContentAlignment.MiddleCenter;
+        openFolder.Cursor = quit.Cursor = download.Cursor = modCopy.Cursor = Cursors.Hand;
+        download.TextAlign = modCopy.TextAlign = ContentAlignment.MiddleCenter;
+        tip.SetToolTip(modCopy, ModLine.InstallLine);
         tip.SetToolTip(openFolder, "Open the handoffs folder");
 
         search.BorderStyle = BorderStyle.None;
@@ -128,6 +135,8 @@ class Popup : Form
         updateBar.Controls.Add(download);
         footer.Controls.AddRange(new Control[] { atLogin, loginNote, openFolder, quit });
         footer.Paint += PaintFooterLine;
+        modBar.Controls.AddRange(new Control[] { modTitle, modText, modCopy });
+        modBar.Paint += PaintFooterLine;
 
         list.BorderStyle = BorderStyle.None;
         list.DrawMode = DrawMode.OwnerDrawVariable;
@@ -138,13 +147,14 @@ class Popup : Form
         list.MouseLeave += LeaveList;
         list.MouseClick += ClickRow;
 
-        Controls.AddRange(new Control[] { updateBar, title, subtitle, searchBox, list, empty, footer });
+        Controls.AddRange(new Control[] { updateBar, title, subtitle, searchBox, list, empty, modBar, footer });
 
         search.TextChanged += SearchChanged;
         atLogin.CheckedChanged += LoginChanged;
         openFolder.Click += OpenFolderClicked;
         quit.Click += QuitClicked;
         download.Click += DownloadClicked;
+        modCopy.Click += ModCopyClicked;
         Deactivate += HideOnDeactivate;
         KeyDown += EscapeCloses;
     }
@@ -167,6 +177,7 @@ class Popup : Form
         if (Visible) { Hide(); return; }
         if (Environment.TickCount - lastHide < ReopenGuardMs) return;
         copiedId = null;
+        modJustCopied = false;
         search.Text = "";
         Reload();
         PlaceNearTray();
@@ -266,6 +277,27 @@ class Popup : Form
         empty.Visible = !showList;
         if (showList) { list.SetBounds(Px(6), y + Px(1), w - Px(12), listH); y += listH + Px(2); }
         else { empty.SetBounds(pad, y + Px(12), w - pad * 2, Px(40)); y += Px(60); }
+
+        var showMod = !ModLine.Copied || modJustCopied;
+        modBar.Visible = showMod;
+        if (showMod)
+        {
+            // The same height after a copy, so the panel does not move under the pointer.
+            var modH = Px(94);
+            modBar.SetBounds(0, y, w, modH);
+            modBar.BackColor = modTitle.BackColor = modText.BackColor = theme.Bg;
+            modTitle.ForeColor = theme.Text; modTitle.Font = rowTitleFont;
+            modTitle.SetBounds(pad, Px(10), w - pad * 2, Px(20));
+            modText.Text = modJustCopied
+                ? "Copied. Paste it into Claude Code and press Enter."
+                : "See your cache countdown, and copy a handoff with one click, right above your prompt.";
+            modText.ForeColor = modJustCopied ? theme.Copied : theme.Muted; modText.Font = metaFont;
+            modText.SetBounds(pad, Px(30), w - pad * 2, Px(32));
+            modCopy.Visible = !modJustCopied;
+            modCopy.SetBounds(pad, Px(62), Px(130), Px(24));
+            modCopy.BackColor = theme.Accent; modCopy.ForeColor = theme.Dark ? Color.Black : Color.White; modCopy.Font = rowTitleFont;
+            y += modH;
+        }
 
         var footH = Px(44);
         footer.SetBounds(0, y, w, footH);
@@ -391,6 +423,14 @@ class Popup : Form
     void QuitClicked(object sender, EventArgs e) { Application.Exit(); }
     // Opens the release page; the download replaces this copy of the app.
     void DownloadClicked(object sender, EventArgs e) { Process.Start(Updates.ReleasePage); }
+
+    void ModCopyClicked(object sender, EventArgs e)
+    {
+        try { Clipboard.SetText(ModLine.InstallLine); } catch (Exception) { return; }
+        ModLine.Copied = true;
+        modJustCopied = true;
+        LayoutAll();
+    }
     void HideOnDeactivate(object sender, EventArgs e) { Hide(); lastHide = Environment.TickCount; }
     void EscapeCloses(object sender, KeyEventArgs e) { if (e.KeyCode == Keys.Escape) Hide(); }
 

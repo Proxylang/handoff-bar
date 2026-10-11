@@ -9,6 +9,10 @@ let maxListHeight: CGFloat = 520
 // Row and day-header heights, used to size the list before it scrolls.
 let rowHeight: CGFloat = 60
 let dayHeaderHeight: CGFloat = 26
+// Typed at the Claude Code prompt, this installs the HandoffBar mod (mod/ in this repo).
+// A slash command is not sent to Claude, so pasting it costs nothing.
+let modInstallLine = "/plugin install handoffbar --marketplace Proxylang/handoff-bar"
+let modLineCopiedKey = "modLineCopied"
 
 final class Store: ObservableObject {
     @Published var handoffs: [Handoff] = []
@@ -17,6 +21,10 @@ final class Store: ObservableObject {
     @Published var query = ""
     /// The newer version GitHub reported, if any.
     @Published var update: String?
+    /// The mod's install line was copied once. The bar then stays hidden from the next opening on.
+    @Published var modLineCopied = UserDefaults.standard.bool(forKey: modLineCopiedKey)
+    /// Keeps the bar up, saying "Copied", until the panel closes.
+    @Published var modLineJustCopied = false
 
     /// Search covers every handoff on disk; the list shows the newest matches.
     var visible: [Handoff] {
@@ -31,6 +39,14 @@ final class Store: ObservableObject {
     func reload() {
         handoffs = loadHandoffs()
         openAtLogin = SMAppService.mainApp.status == .enabled
+    }
+
+    func copyModLine() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(modInstallLine, forType: .string)
+        UserDefaults.standard.set(true, forKey: modLineCopiedKey)
+        modLineCopied = true
+        modLineJustCopied = true
     }
 
     func setOpenAtLogin(_ on: Bool) {
@@ -111,6 +127,11 @@ struct ListView: View {
                 .frame(height: listHeight)
             }
 
+            if !store.modLineCopied || store.modLineJustCopied {
+                Divider()
+                ModBar(copied: store.modLineJustCopied, copy: store.copyModLine)
+            }
+
             Divider()
 
             HStack(spacing: 14) {
@@ -123,6 +144,9 @@ struct ListView: View {
             .padding(.horizontal, 16).padding(.vertical, 10)
         }
         .frame(width: popoverWidth)
+        .onReceive(NotificationCenter.default.publisher(for: NSPopover.didCloseNotification)) { _ in
+            store.modLineJustCopied = false
+        }
     }
 
     var listHeight: CGFloat {
@@ -194,6 +218,39 @@ struct UpdateBar: View {
 
     // Opens the new DMG in the browser. Installing it replaces this copy of the app.
     func download() { NSWorkspace.shared.open(latestDownload) }
+}
+
+struct ModBar: View {
+    let copied: Bool
+    let copy: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "terminal.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                .frame(width: 20).padding(.top, 1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Also works in the Claude Code terminal as a mod").font(.system(size: 12, weight: .semibold))
+                Text(copied
+                     ? "Copied. Paste it into Claude Code and press Enter."
+                     : "See your cache countdown, and copy a handoff with one click, right above your prompt.")
+                    .font(.system(size: 11)).foregroundStyle(copied ? Color.green : Color.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !copied {
+                    // Drawn by hand, like the update bar's button.
+                    Button(action: copy) {
+                        Text("Copy install line").font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                            .padding(.horizontal, 12).frame(height: 24)
+                            .background(Capsule().fill(Color.accentColor))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 6)
+                    .help(modInstallLine)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+    }
 }
 
 struct SearchField: View {

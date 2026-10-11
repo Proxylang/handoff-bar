@@ -71,9 +71,15 @@ const isoDate = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+(Z|[+-]\d{2}:?\d{2})$/
 export function cacheState(text: string): { lastRequest: number; cache: number } | undefined {
   const bytes = new TextEncoder().encode(text)
   const tail = bytes.length > tailBytes ? new TextDecoder().decode(bytes.subarray(bytes.length - tailBytes)) : text
+  // The desktop app saves its tool list (over 1 MB) after a reply, which can push the reply out
+  // of the file end. Then the whole file is read.
+  return lastReply(tail) ?? (tail === text ? undefined : lastReply(text))
+}
+
+function lastReply(text: string): { lastRequest: number; cache: number } | undefined {
   let lastRequest: number | undefined
   let cache: number | undefined
-  for (const o of jsonLines(tail).reverse()) {
+  for (const o of jsonLines(text).reverse()) {
     if (o.type !== 'assistant' || bool(o.isSidechain)) continue
     const ts = str(o.timestamp)
     if (lastRequest === undefined && ts !== undefined && isoDate.test(ts)) lastRequest = Date.parse(ts)

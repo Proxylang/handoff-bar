@@ -113,7 +113,15 @@ func cacheState(_ chat: URL) -> (Date, TimeInterval)? {
     let size = (try? handle.seekToEnd()) ?? 0
     try? handle.seek(toOffset: size > UInt64(tailBytes) ? size - UInt64(tailBytes) : 0)
     guard let data = try? handle.readToEnd() else { return nil }
+    if let found = lastReply(data) { return found }
+    // The desktop app saves its tool list (over 1 MB) after a reply, which can push the reply out
+    // of the file end. Then the whole file is read.
+    guard size > UInt64(tailBytes), (try? handle.seek(toOffset: 0)) != nil,
+          let whole = try? handle.readToEnd() else { return nil }
+    return lastReply(whole)
+}
 
+private func lastReply(_ data: Data) -> (Date, TimeInterval)? {
     var lastRequest: Date?
     var cache: TimeInterval?
     for o in jsonLines(data).reversed() where o["type"] as? String == "assistant" && o["isSidechain"] as? Bool != true {

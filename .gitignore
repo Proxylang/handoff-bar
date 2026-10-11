@@ -4,3 +4,5 @@ AppIcon.iconset/
 .DS_Store
 windows/dist/
 windows/package/tools/
+vscode/out/
+vscode/node_modules/

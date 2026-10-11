@@ -98,6 +98,36 @@
   .facts h3 { font-size: 17px; margin: 0 0 4px; }
   .facts p { margin: 0; color: var(--muted); }
 
+  /* "Pick where you want the button": one card per way to copy a handoff, each with a picture
+     of where the button appears. The shots share one height so the text starts on one line,
+     and the install row sits at each card's bottom. */
+  .ways { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 44px; }
+  .way { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; scroll-margin-top: 48px; }
+  .way-shot { height: 220px; display: flex; align-items: center; justify-content: center; background: #0d1520; border-bottom: 1px solid var(--line); overflow: hidden; }
+  .way-shot-app { align-items: flex-start; padding-top: 18px; }
+  .way-shot-app img { width: 240px; height: auto; border-radius: 10px; box-shadow: 0 12px 32px rgb(0 0 0 / .35); }
+  .way-shot-vscode img { width: 280px; height: auto; border-radius: 10px; }
+  .way-shot-term { justify-content: flex-start; padding: 0 20px; }
+  .way-shot-term pre { margin: 0; font: 11.5px/1.55 ui-monospace, "SF Mono", Menlo, monospace; color: #d4d4d8; white-space: pre; }
+  .t-warn { color: #facc15; }
+  .t-dim { color: #71717a; }
+  .t-key { color: var(--accent); font-weight: 700; }
+  .t-btn { color: #fff; font-weight: 700; }
+  .t-accent { color: #a1a1aa; }
+  .way-body { display: flex; flex-direction: column; flex: 1; padding: 22px 22px 24px; }
+  .way-body h3 { font-size: 20px; margin: 0; letter-spacing: -0.01em; }
+  .way-where { margin: 2px 0 12px; color: var(--accent); font-weight: 600; font-size: 14px; }
+  .way-body p { margin: 0 0 10px; color: var(--muted); text-wrap: pretty; }
+  .way-works { font-size: 14.5px; }
+  .way-works strong { color: var(--text); font-weight: 600; }
+  .way-get { margin-top: auto; padding-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn-sm { height: 40px; padding: 0 18px; font-size: 15px; }
+  /* Wraps at the spaces so the whole line shows in a narrow card; the Copy button sits under it. */
+  .way-cmd { display: block; width: 100%; padding: 10px 12px; font-size: 12.5px; line-height: 1.6; white-space: normal; }
+  button.btn { cursor: pointer; font-family: inherit; background: none; }
+  .ways-note { margin: 22px 0 0; color: var(--muted); font-size: 15px; }
+  @media (max-width: 960px) { .ways { grid-template-columns: 1fr; max-width: 520px; } }
+
   .maker { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 40px; display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: center; }
   .maker h2 { font-size: 28px; }
 
@@ -142,7 +172,10 @@
     .sponsor-more { display: none; }
   }
 
+  /* The hero's "Claude Code mod" button jumps here; the margin keeps the heading off the window's top edge. */
+  #claude-code { scroll-margin-top: 48px; }
   @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
     .rise { animation: rise .7s cubic-bezier(.16,1,.3,1) both; }
     .rise.d2 { animation-delay: .12s; }
     @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
@@ -188,7 +221,9 @@
         <!-- Apple logo from Simple Icons (CC0). Windows logo drawn as its four squares. -->
         <a class="btn btn-primary" href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for Mac</a>
         <a class="btn btn-primary" href="https://apps.microsoft.com/detail/9nsk9p03t9cn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 1h10.5v10.5H1zM12.5 1H23v10.5H12.5zM1 12.5h10.5V23H1zM12.5 12.5H23V23H12.5z"/></svg>Download for Windows</a>
-        <a class="btn btn-ghost" href="https://github.com/Proxylang/handoff-bar">View source</a>
+        <!-- The source link stays in the header and footer. These two scroll to their cards below. -->
+        <a class="btn btn-ghost" href="#vscode"><svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>VS Code extension</a>
+        <a class="btn btn-ghost" href="#mod"><svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"><path d="M4 7l5 5-5 5M12 18h8"/></svg>Claude Code mod</a>
       </div>
     </div>
     <div class="shot rise d2">
@@ -217,6 +252,74 @@
           <p>Click the hand in your Mac menu bar or Windows taskbar, click the chat, and paste the handoff into a new Claude Code chat.</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2 id="claude-code">Pick where you want the button</h2>
+      <p class="sub">Three ways to copy a handoff. They all save the same file for each chat, so you can use more than one. None of them types into your chat.</p>
+      <div class="ways">
+        <article class="way" id="app">
+          <div class="way-shot way-shot-app">
+            <picture>
+              <source srcset="/panel-dark.png" media="(prefers-color-scheme: dark)">
+              <img src="/panel-light.png" width="380" height="553" alt="The HandoffBar menu bar panel: a list of recent chats with titles, projects, and times." loading="lazy">
+            </picture>
+          </div>
+          <div class="way-body">
+            <h3>Menu bar app</h3>
+            <p class="way-where">Mac and Windows</p>
+            <p>Every recent chat in one list. Click a chat and its handoff is on your clipboard.</p>
+            <p class="way-works"><strong>Works with</strong> the terminal, VS Code, and the Claude desktop app.</p>
+            <div class="way-get">
+              <a class="btn btn-primary btn-sm" href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg">Download for Mac</a>
+              <a class="btn btn-ghost btn-sm" href="https://apps.microsoft.com/detail/9nsk9p03t9cn">Windows</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="way" id="vscode">
+          <div class="way-shot way-shot-vscode">
+            <img src="/vscode-copy-handoff.jpg" width="234" height="131" alt="The top right of a Claude chat tab in VS Code: an orange hand icon next to the Claude icon, with the tip Copy handoff for this chat." loading="lazy">
+          </div>
+          <div class="way-body">
+            <h3>VS Code extension</h3>
+            <p class="way-where">On each Claude chat tab</p>
+            <p>An orange hand at the top right of the chat tab copies that chat's handoff. The status bar shows how long its cache has left.</p>
+            <p class="way-works"><strong>Works with</strong> Claude Code in VS Code.</p>
+            <div class="way-get">
+              <a class="btn btn-primary btn-sm" href="https://marketplace.visualstudio.com/items?itemName=proxylang.handoffbar">Get the extension</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="way" id="mod">
+          <!-- The mod's text word for word, from a terminal capture on 2026-10-11; only the minutes differ. -->
+          <div class="way-shot way-shot-term" role="img" aria-label="Claude Code in a terminal: a yellow warning that the chat's cache expired, a Copy handoff button above the prompt, and the cache line under it.">
+<pre><span class="t-warn">This chat's prompt cache expired
+16 min ago. Your next message re-sends
+the whole chat at full price.</span>
+<span class="t-dim">ctrl+x tab, then</span> <span class="t-key">c</span>: <span class="t-btn">[ 👉 Copy handoff ]</span>
+<span class="t-dim">──────────────────────────────────────</span>
+<span class="t-accent">❯</span>
+<span class="t-dim">──────────────────────────────────────</span>
+<span class="t-warn">⚠</span> <span class="t-dim">handoffbar: Prompt cache: expired
+  16 min ago</span></pre>
+          </div>
+          <div class="way-body">
+            <h3>Claude Code mod</h3>
+            <p class="way-where">Inside Claude Code in the terminal</p>
+            <p>A Copy handoff button above the prompt, a cache countdown under it, and a warning when the cache runs out.</p>
+            <p class="way-works"><strong>Works with</strong> Claude Code in the terminal. Type this at its prompt:</p>
+            <div class="way-get">
+              <code class="way-cmd" id="mod-cmd">/plugin install handoffbar --marketplace Proxylang/handoff-bar</code>
+              <button class="btn btn-ghost btn-sm" type="button" id="mod-copy">Copy</button>
+            </div>
+          </div>
+        </article>
+      </div>
+      <p class="ways-note">The Claude desktop app can't show buttons from extensions or mods yet. Use the menu bar app there.</p>
     </div>
   </section>
 
@@ -262,8 +365,8 @@
       </div>
       <div class="facts" style="margin-top:0">
         <div><h3>What it reads</h3><p>The chat files Claude Code already saves in <code>~/.claude/projects</code>. Nothing else on your computer.</p></div>
-        <div><h3>What it writes</h3><p>One Markdown file per chat in <code>~/.claude/handoffs</code>. The clipboard only changes when you click a chat.</p></div>
-        <div><h3>How it's built</h3><p>The Mac app is native Swift (SwiftUI and AppKit), about 780 lines. The Windows app is C# (WinForms), about 1,100 lines. Neither uses third-party code.</p></div>
+        <div><h3>What it writes</h3><p>One Markdown file per chat in <code>~/.claude/handoffs</code>. The clipboard only changes when you click a chat or the Copy handoff button.</p></div>
+        <div><h3>How it's built</h3><p>The Mac app is native Swift (SwiftUI and AppKit), about 780 lines. The Windows app is C# (WinForms), about 1,100 lines. The Claude Code mod is TypeScript, about 580 lines. The VS Code extension adds about 170 lines on top of the mod's handoff writer. Neither makes network requests, and none of them uses third-party code.</p></div>
         <div><h3>One network request</h3><p>Once a day the Mac app asks GitHub for the latest version number, so it can show an update button. That request carries no data from your Mac. The Windows app makes no requests at all; the Microsoft Store handles its updates.</p></div>
         <div><h3>Signed and open</h3><p>The Mac app is signed with a Developer ID and notarized by Apple. The Windows app is signed by the Microsoft Store. MIT licensed: read every line or build it yourself on GitHub.</p></div>
       </div>
@@ -300,6 +403,16 @@
   }
   new MutationObserver(applyHeadlineLang).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   applyHeadlineLang();
+
+  // The mod card's Copy button puts the install line on the clipboard and says so for 2 seconds.
+  function copyModCommand() {
+    var button = document.getElementById('mod-copy');
+    navigator.clipboard.writeText(document.getElementById('mod-cmd').textContent).then(function () {
+      button.textContent = 'Copied';
+      setTimeout(function () { button.textContent = 'Copy'; }, 2000);
+    });
+  }
+  document.getElementById('mod-copy').addEventListener('click', copyModCommand);
 </script>
 </body>
 </html>

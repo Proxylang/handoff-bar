@@ -141,6 +141,30 @@ static class Startup
     }
 }
 
+/// The line that installs the HandoffBar mod (mod/ in this repo), typed at the Claude Code prompt.
+/// A slash command is not sent to Claude, so pasting it costs nothing.
+static class ModLine
+{
+    public const string InstallLine = "/plugin install handoffbar --marketplace Proxylang/handoff-bar";
+    const string Key = @"Software\HandoffBar";
+    const string Name = "ModLineCopied";
+
+    /// The line was copied once. The popup's mod bar then stays hidden from the next opening on.
+    public static bool Copied
+    {
+        get
+        {
+            try { using (var k = Registry.CurrentUser.OpenSubKey(Key)) return k != null && k.GetValue(Name) != null; }
+            catch { return false; }
+        }
+        set
+        {
+            try { using (var k = Registry.CurrentUser.CreateSubKey(Key)) { if (value) k.SetValue(Name, 1); else k.DeleteValue(Name, false); } }
+            catch { }
+        }
+    }
+}
+
 /// Checks GitHub once a day for a newer release that has a Windows download.
 /// This is the app's only network request. It sends nothing about the user or their chats.
 static class Updates

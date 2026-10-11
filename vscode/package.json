@@ -1,0 +1,51 @@
+{
+  "name": "handoffbar",
+  "displayName": "HandoffBar for Claude Code",
+  "description": "Copy a Claude Code chat's handoff with one click from the chat tab, and see how long its prompt cache has left.",
+  "version": "0.1.1",
+  "publisher": "proxylang",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "homepage": "https://handoffbar.proxylang.dev",
+  "repository": { "type": "git", "url": "https://github.com/Proxylang/handoff-bar" },
+  "engines": { "vscode": "^1.90.0" },
+  "categories": ["Other"],
+  "keywords": ["claude", "claude code", "handoff", "prompt cache"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "handoffbar.copy",
+        "title": "Copy handoff for this chat",
+        "category": "HandoffBar",
+        "icon": { "light": "media/hand-light.svg", "dark": "media/hand-dark.svg" }
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "handoffbar.copy",
+          "when": "activeWebviewPanelId == 'claudeVSCodePanel'",
+          "group": "navigation@-10"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "handoffbar.copy",
+          "when": "view == claudeVSCodeSidebar || view == claudeVSCodeSidebarSecondary",
+          "group": "navigation@-10"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "./build.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.90.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.6.0"
+  }
+}

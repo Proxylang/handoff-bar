@@ -158,10 +158,18 @@ static class Writer
     /// The API reports which cache a request wrote: ephemeral_1h_input_tokens or ephemeral_5m_input_tokens.
     public static bool CacheState(string chat, out DateTime lastRequest, out double cache)
     {
+        if (LastReply(ReadTailLines(chat, TailBytes), out lastRequest, out cache)) return true;
+        // The desktop app saves its tool list (over 1 MB) after a reply, which can push the reply out
+        // of the file end. Then the whole file is read.
+        return new FileInfo(chat).Length > TailBytes && LastReply(ReadTailLines(chat, int.MaxValue), out lastRequest, out cache);
+    }
+
+    static bool LastReply(string[] lines, out DateTime lastRequest, out double cache)
+    {
         lastRequest = DateTime.MinValue; cache = 0;
         var found = false;
         double? seen = null;
-        foreach (var line in ReadTailLines(chat, TailBytes).Reverse())
+        foreach (var line in lines.Reverse())
         {
             if (!line.Contains("\"assistant\"")) continue;
             var o = Json.Parse(line);
