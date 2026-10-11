@@ -28,12 +28,14 @@ const TEXT = [
 
 /** Answers every call the mod makes on $ beneath it, and records what it writes. `files` are
  * other files on disk by path, each read as TEXT; folders are listed from them. `taken` are
- * command names the user's own commands or skills already use. */
+ * command names the user's own commands or skills already use. `hasChat` false is a new chat
+ * whose file does not exist yet. */
 function world(
   on: On,
   readable = true,
   files: Record<string, { mtimeMs: number; size?: number }> = {},
   taken: string[] = [],
+  hasChat = true,
 ) {
   const clock = mock.clock(on, { now: REPLY_AT })
   mock.store(on)
@@ -68,7 +70,7 @@ function world(
     }
     return { value: [...entries.values()] }
   })
-  on('fs.exists', ($, e) => ({ value: e.path === CHAT }))
+  on('fs.exists', ($, e) => ({ value: hasChat && e.path === CHAT }))
   on('fs.stat', () => ({ value: { kind: 'file', size: TEXT.length, mtimeMs: REPLY_AT, isLink: false } }))
   on('fs.read', ($, e) =>
     readable ? { value: e.path === CHAT || e.path in files ? TEXT : '' } : { deny: 'disk unplugged' },
@@ -174,6 +176,16 @@ test('the last reply is found behind a row longer than the 512 KB read from the 
   expect(cacheState(`${TEXT}\n${tools}\n`)).toEqual({ lastRequest: REPLY_AT, cache: 300 })
 })
 
+test('a new chat with no reply yet shows no button: there is nothing to copy', async ($, on) => {
+  const { clock } = world(on, true, {}, [], false)
+  await start($)
+  await clock.advance(1000)
+  const props = { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 80 } as const
+  const ui = await $.ui.mount({ plugin: 'handoffbar', surface: 'terminal', component: 'AbovePrompt', props: props as never })
+  expect(await ui.find({ key: 'copy' })).toBeUndefined()
+  await ui.unmount()
+})
+
 test('an error that repeats every second is shown in the chat once', async ($, on) => {
   const { clock } = world(on, false)
   const logs: string[] = []
@@ -196,6 +208,7 @@ test('an error that repeats every second is shown in the chat once', async ($, o
 test('the warning shows above the prompt once the cache has expired', async ($, on) => {
   const { clock } = world(on)
   await start($)
+  await clock.advance(1000)
   const props = { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 80 } as const
   for (const surface of ['terminal', 'desktop', 'vscode'] as const) {
     const ui = await $.ui.mount({ plugin: 'handoffbar', surface, component: 'AbovePrompt', props: props as never })
@@ -225,6 +238,7 @@ test('Copy handoff copies the saved handoff and sends nothing to the chat', asyn
     return next(e)
   })
   await start($)
+  await clock.advance(1000)
   const props = { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 80 } as const
   for (const surface of ['terminal', 'desktop', 'vscode'] as const) {
     const ui = await $.ui.mount({ plugin: 'handoffbar', surface, component: 'AbovePrompt', props: props as never })

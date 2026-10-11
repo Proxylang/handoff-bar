@@ -59,6 +59,12 @@
   .h1-note { display: block; margin-top: 10px; font-size: .5em; letter-spacing: -0.01em; color: var(--accent); }
   .lead { font-size: 19px; color: var(--muted); max-width: 30em; margin: 0 0 32px; }
   .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+  /* How it works, in the hero: three short numbered lines between the lead and the buttons. */
+  .steps { list-style: none; margin: 0 0 32px; padding: 0; display: grid; gap: 10px; }
+  .steps li { display: flex; align-items: center; gap: 12px; }
+  .steps span { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--accent-text); font-size: 13px; font-weight: 700; }
+  .steps p { margin: 0; color: var(--muted); font-size: 16px; }
+  .steps strong { color: var(--text); font-weight: 600; }
   .btn {
     display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 22px;
     border-radius: 999px; font-weight: 600; font-size: 16px; text-decoration: none; white-space: nowrap;
@@ -82,21 +88,15 @@
   h2 { font-size: clamp(28px, 3.4vw, 38px); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 16px; }
   .sub { color: var(--muted); max-width: 40em; margin: 0; font-size: 18px; }
 
-  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 48px; }
-  .flow h3 { font-size: 20px; margin: 0 0 8px; }
-  .flow p { margin: 0; color: var(--muted); }
 
-  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
-  .split .facts { grid-template-columns: 1fr; gap: 22px; }
-  .contents { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 0; padding: 0; list-style: none; }
-  .contents li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
-  .contents li:last-child { grid-column: 1 / -1; }
-  .contents strong { display: block; margin-bottom: 2px; }
-  .contents span { color: var(--muted); font-size: 15px; }
-
-  .facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px 40px; margin-top: 40px; }
-  .facts h3 { font-size: 17px; margin: 0 0 4px; }
-  .facts p { margin: 0; color: var(--muted); }
+  /* "The details": three short lists side by side, one per topic. */
+  .details { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 36px; }
+  .details > div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 22px 20px; }
+  .details h3 { font-size: 17px; margin: 0 0 12px; }
+  .details ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+  .details li { position: relative; padding-left: 18px; color: var(--muted); font-size: 15px; text-wrap: pretty; }
+  .details li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .details code { font-size: 13px; }
 
   /* "Pick where you want the button": one card per way to copy a handoff, each with a picture
      of where the button appears. The shots share one height so the text starts on one line,
@@ -118,18 +118,41 @@
   .way-body h3 { font-size: 20px; margin: 0; letter-spacing: -0.01em; }
   .way-where { margin: 2px 0 12px; color: var(--accent); font-weight: 600; font-size: 14px; }
   .way-body p { margin: 0 0 10px; color: var(--muted); text-wrap: pretty; }
-  .way-works { font-size: 14.5px; }
-  .way-works strong { color: var(--text); font-weight: 600; }
+  /* "Works with" sits in a tinted box right under the subtitle, so it is the first fact read. */
+  .way-body p.way-works { margin: 0 0 14px; padding: 9px 12px; border-radius: 10px; font-size: 14px; color: var(--text);
+    background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+  .way-install { font-size: 14.5px; }
+  kbd { font: 600 13px ui-monospace, "SF Mono", Menlo, monospace; padding: 1px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; color: var(--text); }
+  .way-works strong { font-weight: 700; color: var(--accent); }
   .way-get { margin-top: auto; padding-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
   .btn-sm { height: 40px; padding: 0 18px; font-size: 15px; }
-  /* Wraps at the spaces so the whole line shows in a narrow card; the Copy button sits under it. */
+  /* Wraps only at the spaces between words so the whole line shows in a narrow card; the Copy button sits under it. */
   .way-cmd { display: block; width: 100%; padding: 10px 12px; font-size: 12.5px; line-height: 1.6; white-space: normal; }
+  .way-cmd span { white-space: nowrap; }
   button.btn { cursor: pointer; font-family: inherit; background: none; }
   .ways-note { margin: 22px 0 0; color: var(--muted); font-size: 15px; }
   @media (max-width: 960px) { .ways { grid-template-columns: 1fr; max-width: 520px; } }
 
   .maker { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 40px; display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: center; }
   .maker h2 { font-size: 28px; }
+  .maker-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  /* Moved down so the logo's wordmark lines up with the "Made by" text, measured on screen. */
+  .maker-title img { height: 34px; width: auto; display: block; transform: translateY(4px); }
+  /* The pink of the Proxylang bar at the top, drifting and with the same shine. */
+  .btn-pink {
+    position: relative; overflow: hidden; color: #fff;
+    background: linear-gradient(100deg, #b3137a, #ce1689, #f002be, #ce1689, #b3137a); background-size: 300% 100%;
+  }
+  .btn-pink:hover { filter: brightness(1.08); }
+  @media (prefers-reduced-motion: no-preference) {
+    .btn-pink { animation: sponsor-drift 6s ease-in-out infinite alternate; }
+    .btn-pink::before {
+      content: ""; position: absolute; inset: 0; width: 40%; pointer-events: none;
+      background: linear-gradient(100deg, transparent, rgb(255 255 255 / .28), transparent);
+      transform: translateX(-120%); animation: btn-shine 4s ease-in-out infinite;
+    }
+    @keyframes btn-shine { 0%, 50% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
+  }
 
   footer { padding: 40px 0 56px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
   footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
@@ -182,9 +205,9 @@
   }
 
   @media (max-width: 860px) {
-    .hero, .split, .maker { grid-template-columns: 1fr; }
+    .hero, .maker { grid-template-columns: 1fr; }
     .hero { padding-top: 32px; padding-bottom: 64px; gap: 40px; }
-    .flow, .facts, .contents { grid-template-columns: 1fr; }
+    .details { grid-template-columns: 1fr; }
     section { padding: 64px 0; }
     .maker { padding: 28px; }
   }
@@ -216,7 +239,12 @@
         <span data-en="Pick up any Claude&nbsp;Code chat where you left off" data-ko="캐시가 만료돼도, Claude&nbsp;Code 대화를 하던 그대로 이어가세요">Pick up any Claude&nbsp;Code chat where you left off</span>
         <span class="h1-note" data-en="(without wasting tokens)" data-ko="(토큰 낭비 없이)">(without wasting tokens)</span>
       </h1>
-      <p class="lead">Before a chat's cache expires, HandoffBar saves a summary. Paste it into a new chat and keep going, instead of paying to reload the old one.</p>
+      <p class="lead">Claude Code charges full price to pick a chat back up after a break. HandoffBar gives you a clean and accurate handoff, so you can start a new chat instead.</p>
+      <ol class="steps">
+        <li><span>1</span><p><strong>Saves</strong> a handoff of every chat for you</p></li>
+        <li><span>2</span><p><strong>Copy</strong> it with one click</p></li>
+        <li><span>3</span><p><strong>Paste</strong> it into a new chat and keep going</p></li>
+      </ol>
       <div class="ctas">
         <!-- Apple logo from Simple Icons (CC0). Windows logo drawn as its four squares. -->
         <a class="btn btn-primary" href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for Mac</a>
@@ -236,28 +264,7 @@
 
   <section>
     <div class="wrap">
-      <h2>Why it exists</h2>
-      <p class="sub">Claude Code caches each chat so replies stay fast and cheap. Leave a chat alone too long and the cache expires. The next message re-reads the whole chat at full price. A fresh chat with a short handoff is cheaper and quicker.</p>
-      <div class="flow">
-        <div>
-          <h3>It watches</h3>
-          <p>Once a minute it checks your Claude Code chats and reads how long each one's cache lasts: 5 minutes or 1 hour.</p>
-        </div>
-        <div>
-          <h3>It writes</h3>
-          <p>A few minutes before a cache runs out, it saves that chat's handoff to <code>~/.claude/handoffs</code>.</p>
-        </div>
-        <div>
-          <h3>You paste</h3>
-          <p>Click the hand in your Mac menu bar or Windows taskbar, click the chat, and paste the handoff into a new Claude Code chat.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="wrap">
-      <h2 id="claude-code">Pick where you want the button</h2>
+      <h2 id="claude-code">Where do you use Claude?</h2>
       <p class="sub">Three ways to copy a handoff. They all save the same file for each chat, so you can use more than one. None of them types into your chat.</p>
       <div class="ways">
         <article class="way" id="app">
@@ -269,9 +276,9 @@
           </div>
           <div class="way-body">
             <h3>Menu bar app</h3>
-            <p class="way-where">Mac and Windows</p>
+            <p class="way-where">In your Mac menu bar or Windows taskbar</p>
+            <p class="way-works"><strong>Works with</strong> the terminal, VS Code, and the Claude desktop app</p>
             <p>Every recent chat in one list. Click a chat and its handoff is on your clipboard.</p>
-            <p class="way-works"><strong>Works with</strong> the terminal, VS Code, and the Claude desktop app.</p>
             <div class="way-get">
               <a class="btn btn-primary btn-sm" href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg">Download for Mac</a>
               <a class="btn btn-ghost btn-sm" href="https://apps.microsoft.com/detail/9nsk9p03t9cn">Windows</a>
@@ -286,8 +293,8 @@
           <div class="way-body">
             <h3>VS Code extension</h3>
             <p class="way-where">On each Claude chat tab</p>
-            <p>An orange hand at the top right of the chat tab copies that chat's handoff. The status bar shows how long its cache has left.</p>
-            <p class="way-works"><strong>Works with</strong> Claude Code in VS Code.</p>
+            <p class="way-works"><strong>Works with</strong> Claude Code in VS Code</p>
+            <p>Click the orange hand to copy that chat's handoff. The bar at the bottom of VS Code shows how long its cache has left.</p>
             <div class="way-get">
               <a class="btn btn-primary btn-sm" href="https://marketplace.visualstudio.com/items?itemName=proxylang.handoffbar">Get the extension</a>
             </div>
@@ -300,7 +307,7 @@
 <pre><span class="t-warn">This chat's prompt cache expired
 16 min ago. Your next message re-sends
 the whole chat at full price.</span>
-<span class="t-dim">ctrl+x tab, then</span> <span class="t-key">c</span>: <span class="t-btn">[ 👉 Copy handoff ]</span>
+<span class="t-dim">press</span> <span class="t-key">0</span>: <span class="t-btn">[ 👉 Copy handoff ]</span> [ Hide ]
 <span class="t-dim">──────────────────────────────────────</span>
 <span class="t-accent">❯</span>
 <span class="t-dim">──────────────────────────────────────</span>
@@ -309,11 +316,12 @@ the whole chat at full price.</span>
           </div>
           <div class="way-body">
             <h3>Claude Code mod</h3>
-            <p class="way-where">Inside Claude Code in the terminal</p>
-            <p>A Copy handoff button above the prompt, a cache countdown under it, and a warning when the cache runs out.</p>
-            <p class="way-works"><strong>Works with</strong> Claude Code in the terminal. Type this at its prompt:</p>
+            <p class="way-where">Right above your prompt</p>
+            <p class="way-works"><strong>Works with</strong> Claude Code in the terminal</p>
+            <p>Press <kbd>0</kbd> before you type anything to copy the handoff, or click the button in fullscreen mode. A countdown shows how long the cache has left.</p>
+            <p class="way-install">Type this at the Claude Code prompt to install it:</p>
             <div class="way-get">
-              <code class="way-cmd" id="mod-cmd">/plugin install handoffbar --marketplace Proxylang/handoff-bar</code>
+              <code class="way-cmd" id="mod-cmd"><span>/plugin</span> <span>install</span> <span>handoffbar</span> <span>--marketplace</span> <span>Proxylang/handoff-bar</span></code>
               <button class="btn btn-ghost btn-sm" type="button" id="mod-copy">Copy</button>
             </div>
           </div>
@@ -324,51 +332,37 @@ the whole chat at full price.</span>
   </section>
 
   <section>
-    <div class="wrap split">
-      <div>
-        <h2>What a handoff holds</h2>
-        <p class="sub">Plain Markdown, one file per chat. Enough for the new chat to know what you were doing, without the full history.</p>
-      </div>
-      <ul class="contents">
-        <li><strong>Title</strong><span>The name you gave the tab, or Claude's own title.</span></li>
-        <li><strong>Where</strong><span>Working folder, git branch, and the old chat file.</span></li>
-        <li><strong>Your requests</strong><span>The first one, plus the last ten.</span></li>
-        <li><strong>Your choices</strong><span>When Claude asked you to pick, the question, the options, and your answer.</span></li>
-        <li><strong>Next steps</strong><span>The to-do list Claude left at the end of the chat.</span></li>
-        <li><strong>Running things</strong><span>Dev servers and other commands Claude started in the background.</span></li>
-        <li><strong>Last error</strong><span>If something failed in the final few steps.</span></li>
-        <li><strong>Changed files</strong><span>Every file the chat edited.</span></li>
-        <li><strong>Last reply</strong><span>Claude's final answer in the old chat.</span></li>
-      </ul>
-    </div>
-  </section>
-
-  <section>
     <div class="wrap">
-      <h2>Features</h2>
-      <div class="facts">
-        <div><h3>Search every chat</h3><p>Type to filter by title, project, or chat id. Search covers every saved handoff.</p></div>
-        <div><h3>Your tab names</h3><p>Chats show the name you gave the tab, even if you rename it after the handoff was saved.</p></div>
-        <div><h3>Easy to scan</h3><p>Chats are grouped by day, with the project and how long ago. Hover one to see your last request.</p></div>
-        <div><h3>Open at login</h3><p>One checkbox keeps it running after a restart. Light and dark mode follow your system setting.</p></div>
-        <div><h3>Terminal, VS Code, desktop</h3><p>Works with Claude Code in the terminal, the VS Code extension, and the Code tab of the Claude desktop app.</p></div>
-        <div><h3>Mac and Windows</h3><p>macOS 13 or later, Apple Silicon or Intel. Windows 10 (version 1809) or later, from the Microsoft Store.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="wrap split">
-      <div>
-        <h2>Security</h2>
-        <p class="sub">Your chats stay on your computer. HandoffBar never sends your chats, handoffs, or anything about you anywhere: no account, no analytics, no AI model.</p>
-      </div>
-      <div class="facts" style="margin-top:0">
-        <div><h3>What it reads</h3><p>The chat files Claude Code already saves in <code>~/.claude/projects</code>. Nothing else on your computer.</p></div>
-        <div><h3>What it writes</h3><p>One Markdown file per chat in <code>~/.claude/handoffs</code>. The clipboard only changes when you click a chat or the Copy handoff button.</p></div>
-        <div><h3>How it's built</h3><p>The Mac app is native Swift (SwiftUI and AppKit), about 780 lines. The Windows app is C# (WinForms), about 1,100 lines. The Claude Code mod is TypeScript, about 580 lines. The VS Code extension adds about 170 lines on top of the mod's handoff writer. Neither makes network requests, and none of them uses third-party code.</p></div>
-        <div><h3>One network request</h3><p>Once a day the Mac app asks GitHub for the latest version number, so it can show an update button. That request carries no data from your Mac. The Windows app makes no requests at all; the Microsoft Store handles its updates.</p></div>
-        <div><h3>Signed and open</h3><p>The Mac app is signed with a Developer ID and notarized by Apple. The Windows app is signed by the Microsoft Store. MIT licensed: read every line or build it yourself on GitHub.</p></div>
+      <h2>The details</h2>
+      <div class="details">
+        <div>
+          <h3>In every handoff</h3>
+          <ul>
+            <li>Your first request and your last ten</li>
+            <li>The choices you made and Claude's next steps</li>
+            <li>Files the chat changed, and anything still running</li>
+            <li>The last error and Claude's last reply</li>
+            <li>The chat's title, folder, and git branch</li>
+          </ul>
+        </div>
+        <div>
+          <h3>In the app</h3>
+          <ul>
+            <li>Search every chat by title or project</li>
+            <li>Chats grouped by day, under your tab names</li>
+            <li>Opens at login and follows light or dark mode</li>
+            <li>macOS 13 or later, Windows 10 or later</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Stays on your computer</h3>
+          <ul>
+            <li>Writes one Markdown file per chat in <code>~/.claude/handoffs</code></li>
+            <li>No account, no analytics, no AI model</li>
+            <li>Only network use: the Mac app checks GitHub for updates once a day</li>
+            <li>Signed by Apple and the Microsoft Store, open source under MIT</li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
@@ -377,10 +371,15 @@ the whole chat at full price.</span>
     <div class="wrap">
       <div class="maker">
         <div>
-          <h2>Made by Proxylang</h2>
+          <h2 class="maker-title">Made by
+            <picture>
+              <source srcset="/proxylang-logo-white.svg" media="(prefers-color-scheme: dark)">
+              <img src="/proxylang-logo.svg" width="641" height="160" alt="Proxylang">
+            </picture>
+          </h2>
           <p class="sub">Proxylang translates websites into 77+ languages. Add one line of code and your site is live in other languages in about a minute, with per-language SEO built in.</p>
         </div>
-        <a class="btn btn-ghost" href="https://proxylang.dev/?utm_source=handoffbar&amp;utm_medium=site&amp;utm_campaign=getstarted15">15% off your first month</a>
+        <a class="btn btn-pink" href="https://proxylang.dev/?utm_source=handoffbar&amp;utm_medium=site&amp;utm_campaign=getstarted15">15% off your first month</a>
       </div>
     </div>
   </section>

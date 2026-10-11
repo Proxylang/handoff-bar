@@ -21,6 +21,8 @@ const catchUpMs = 7 * 24 * 60 * 60 * 1000
 const expiredFor = atom({ plugin: 'handoffbar', key: 'expiredFor' } as const, null)
 // The person hid the warning for this expiry. A new reply shows it again next time.
 const isHidden = atom({ plugin: 'handoffbar', key: 'isHidden' } as const, false)
+// This chat has a reply, so there is a handoff to copy. A new chat shows no button until then.
+const hasReply = atom({ plugin: 'handoffbar', key: 'hasReply' } as const, false)
 // What the last Copy handoff press did, shown in the band for noticeMs. The engine's toast is a
 // dim line at the screen's bottom, easy to miss, so the band says it where the person looked.
 const notice = atom({ plugin: 'handoffbar', key: 'notice' } as const, null)
@@ -39,6 +41,7 @@ let isTicking = false
 // The HandoffBar icon is a hand pointing right; this emoji is the same hand and every terminal
 // draws it. The orange is the site's accent in dark mode, where most terminals run.
 const copyLabel = '👉 Copy handoff'
+const copyHotkey = '0'
 const brandOrange = '#e8683f'
 // Claude Code refuses a command name the user's own command or skill has, so the second
 // name is used when the first is taken.
@@ -119,6 +122,7 @@ async function tick($: $) {
   if (found === undefined) {
     // A /clear starts a new chat with no file yet: nothing to count down or warn about.
     if ((await read($, expiredFor)) !== null) await update($, expiredFor, () => null)
+    if (await read($, hasReply)) await update($, hasReply, () => false)
     return $.ui.status(undefined)
   }
   const stat = await $.fs.stat(found.path).catch(() => undefined)
@@ -137,6 +141,7 @@ async function tick($: $) {
       state = { lastRequest: stat.mtimeMs, cache, isTooBig: true }
     }
     if (state?.lastRequest !== before) await update($, isHidden, () => false)
+    if ((await read($, hasReply)) !== (state !== undefined)) await update($, hasReply, () => state !== undefined)
   }
   if (state === undefined) return $.ui.status(undefined)
 
@@ -215,10 +220,10 @@ export const register: Register = on => {
   // Only the name this mod registered: a user's own /handoff stays theirs.
   on('command.run', async ($, e, next) => (e.command === command ? { text: await handoffNow($) } : next(e)))
 
-  // The Copy handoff button is always there, so the person never has to type a message (which
-  // would re-send the chat) to get the handoff. A press only copies: nothing is sent.
+  // Once the chat has a reply the Copy handoff button is always there, so the person never has to
+  // type a message (which would re-send the chat) to get the handoff. A press only copies.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (e.props.hasSurvey || e.props.isWorking) return next(e)
+    if (e.props.hasSurvey || e.props.isWorking || !(await read($, hasReply))) return next(e)
     const minutes = await read($, expiredFor)
     const isWarning = minutes !== null && !(await read($, isHidden))
     const shown = await read($, notice)
@@ -240,15 +245,14 @@ export const register: Register = on => {
           {/* While the cache is live, a small dim link on the right that lights up under the pointer.
               The keyed Box is the area the pointer hovers. */}
           {/* Outside the fullscreen layout the terminal keeps the mouse for selecting text, so a
-              click never reaches the button. The keys do: ctrl+x tab focuses this band, then c. */}
-          {/* A plain Button draws its hotkey ("c: label") itself; the full button does not. */}
-          {e.viewport?.isFullscreen === false && (
-            <Text dimColor>{isWarning ? 'ctrl+x tab, then c: ' : 'ctrl+x tab, then '}</Text>
-          )}
+              click never reaches the button. A digit hotkey does: typed into an empty prompt, it
+              presses this band's button. 0, because a message rarely starts with it.
+              A plain Button draws its hotkey ("0: label") itself; the full button does not. */}
+          {e.viewport?.isFullscreen === false && <Text dimColor>{isWarning ? 'press 0: ' : 'press '}</Text>}
           <Box key="copy-area">
             <Button
               key="copy"
-              hotkey="c"
+              hotkey={copyHotkey}
               label={copyLabel}
               plain={isWarning ? undefined : true}
               dimColor={!isWarning}
