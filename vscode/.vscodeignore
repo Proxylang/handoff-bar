@@ -1,0 +1,9 @@
+# Only the bundle, the icons, and the docs go in the package. The bundle already holds the
+# shared writer from ../mod, so the sources and tests stay out.
+src/**
+test/**
+out/test/**
+dist/**
+node_modules/**
+build.sh
+tsconfig.json
