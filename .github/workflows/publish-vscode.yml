@@ -1,0 +1,29 @@
+# Builds the VS Code extension in vscode/ and publishes it to Open VSX with trusted publishing:
+# no stored token, Open VSX trusts this file in Proxylang/handoff-bar by name.
+# Runs on a tag like vscode-v0.1.3 (plain v* tags are the Mac app's) or by hand from the Actions tab.
+name: Publish VS Code extension
+
+on:
+  push:
+    tags: ['vscode-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vscode
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: ./build.sh
+      # ovsx 1.2.0 is the first version with --trusted-publishing.
+      - run: npx --yes ovsx@1.2.0 publish --packagePath "dist/handoffbar-$(node -p 'require("./package.json").version').vsix" --trusted-publishing --skip-duplicate
