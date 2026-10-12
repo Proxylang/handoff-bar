@@ -6,7 +6,7 @@
 
 <p align="center">Pick up any <a href="https://claude.com/claude-code">Claude Code</a> chat where you left off (without wasting tokens).<br>
 캐시가 만료돼도, Claude Code 대화를 토큰 낭비 없이 하던 그대로 이어가세요.<br>
-<a href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg"><b>Download for Mac · Mac용 다운로드</b></a> · <a href="https://apps.microsoft.com/detail/9nsk9p03t9cn"><b>Download for Windows · Windows용 다운로드</b></a> · <a href="https://marketplace.visualstudio.com/items?itemName=proxylang.handoffbar"><b>VS Code extension · VS Code 확장 프로그램</b></a> · <a href="#claude-code-mod--claude-code-모드"><b>Claude Code mod · Claude Code 모드</b></a> · <a href="https://handoffbar.proxylang.dev">Website · 웹사이트</a></p>
+<a href="https://github.com/Proxylang/handoff-bar/releases/latest/download/HandoffBar.dmg"><b>Download for Mac · Mac용 다운로드</b></a> · <a href="https://apps.microsoft.com/detail/9nsk9p03t9cn"><b>Download for Windows · Windows용 다운로드</b></a> · <a href="https://marketplace.visualstudio.com/items?itemName=Proxylang.handoffbar"><b>VS Code extension · VS Code 확장 프로그램</b></a> · <a href="#claude-code-mod--claude-code-모드"><b>Claude Code mod · Claude Code 모드</b></a> · <a href="https://handoffbar.proxylang.dev">Website · 웹사이트</a></p>
 
 <p align="center"><picture>
 <source media="(prefers-color-scheme: dark)" srcset="site/panel-dark.png">
@@ -73,7 +73,7 @@ Click the orange hand to copy that chat's handoff. The bar at the bottom of VS C
 
 <p align="center"><img src="site/vscode-copy-handoff.jpg" width="234" alt="The top right of a Claude chat tab in VS Code: an orange hand icon next to the Claude icon, with the tip Copy handoff for this chat."></p>
 
-Install it from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=proxylang.handoffbar), or search the Extensions view for **HandoffBar for Claude Code**. Its source is in [vscode/](vscode/).
+Install it from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Proxylang.handoffbar), or search the Extensions view for **HandoffBar for Claude Code**. Its source is in [vscode/](vscode/).
 
 **한국어**
 
@@ -83,7 +83,7 @@ Claude 대화 탭마다 붙어 있어요.
 
 주황색 손 아이콘을 누르면 그 대화의 핸드오프가 복사돼요. VS Code 맨 아래 막대에는 캐시가 얼마나 남았는지 보여요.
 
-[VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=proxylang.handoffbar)에서 설치하거나, 확장 프로그램 보기에서 **HandoffBar for Claude Code**를 검색하세요. 소스 코드는 [vscode/](vscode/) 폴더에 있어요.
+[VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Proxylang.handoffbar)에서 설치하거나, 확장 프로그램 보기에서 **HandoffBar for Claude Code**를 검색하세요. 소스 코드는 [vscode/](vscode/) 폴더에 있어요.
 
 ### Claude Code mod · Claude Code 모드
 
