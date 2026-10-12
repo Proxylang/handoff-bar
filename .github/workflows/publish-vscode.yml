@@ -1,5 +1,5 @@
-# Builds the VS Code extension in vscode/ and publishes it to Open VSX with trusted publishing:
-# no stored token, Open VSX trusts this file in Proxylang/handoff-bar by name.
+# Builds the VS Code extension in vscode/ and publishes it to Open VSX and the VS Code Marketplace.
+# Open VSX uses trusted publishing: no stored token, it trusts this file in Proxylang/handoff-bar by name.
 # Runs on a tag like vscode-v0.1.3 (plain v* tags are the Mac app's) or by hand from the Actions tab.
 name: Publish VS Code extension
 
@@ -27,3 +27,8 @@ jobs:
       - run: ./build.sh
       # ovsx 1.2.0 is the first version with --trusted-publishing.
       - run: npx --yes ovsx@1.2.0 publish --packagePath "dist/handoffbar-$(node -p 'require("./package.json").version').vsix" --trusted-publishing --skip-duplicate
+      # The VS Code Marketplace has no working trusted publishing yet, so it takes a token from the
+      # VSCE_PAT secret. Swap to `vsce publish --oidc` once the Marketplace accepts it.
+      - run: node_modules/.bin/vsce publish --packagePath "dist/handoffbar-$(node -p 'require("./package.json").version').vsix" --skip-duplicate
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
