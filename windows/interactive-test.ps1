@@ -17,8 +17,12 @@ try {
   $usings = $lines | Where-Object { $_ -match '^using [\w.]+;' } | Sort-Object -Unique
   $body = $lines | Where-Object { $_ -notmatch '^using [\w.]+;' -and $_ -notmatch '^\[assembly:' } |
     ForEach-Object { $_ -replace '^class Tray', 'public class Tray' -replace '^class Popup', 'public class Popup' }
-  Add-Type -TypeDefinition (($usings + $body) -join "`n") -Language CSharp -WarningAction SilentlyContinue `
-    -ReferencedAssemblies System.Drawing, System.Windows.Forms, System.Core, "$fw\System.Web.Extensions.dll"
+  # Passed as compiler options: Add-Type's -ReferencedAssemblies tries to load each file and fails on .winmd files.
+  $cp = New-Object System.CodeDom.Compiler.CompilerParameters
+  $cp.GenerateInMemory = $true
+  $cp.ReferencedAssemblies.AddRange(@('System.dll', 'System.Drawing.dll', 'System.Windows.Forms.dll', 'System.Core.dll', "$fw\System.Web.Extensions.dll", "$fw\System.Runtime.dll",
+    "$env:WINDIR\System32\WinMetadata\Windows.Foundation.winmd", "$env:WINDIR\System32\WinMetadata\Windows.ApplicationModel.winmd"))
+  Add-Type -TypeDefinition (($usings + $body) -join "`n") -Language CSharp -WarningAction SilentlyContinue -CompilerParameters $cp
   Add-Type -TypeDefinition @'
 using System; using System.Runtime.InteropServices;
 public static class Mouse {

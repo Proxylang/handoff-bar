@@ -73,7 +73,7 @@ class Popup : Form
     readonly TextBox search = new TextBox();
     readonly SmoothList list = new SmoothList();
     readonly CheckBox atLogin = new CheckBox();
-    readonly Label loginNote = new Label(), openFolder = new Label(), quit = new Label(), download = new Label();
+    readonly Label openFolder = new Label(), quit = new Label(), download = new Label();
     readonly Panel modBar = new Panel();
     readonly Label modTitle = new Label(), modText = new Label(), modCopy = new Label();
     // Keeps the mod bar up, saying "Copied", until the panel closes.
@@ -114,14 +114,13 @@ class Popup : Form
         title.Text = "Handoffs";
         subtitle.Text = "Click a chat to copy its handoff prompt.";
         empty.Text = "No handoffs yet. A chat shows up here 3 minutes after its last reply.";
-        loginNote.Text = "Starts with Windows. Change it in Task Manager > Startup apps.";
         atLogin.Text = "Open at login";
         openFolder.Text = "Open folder";
         quit.Text = "Quit";
         download.Text = "Download";
         modTitle.Text = "Also works in the Claude Code terminal as a mod";
         modCopy.Text = "Copy install line";
-        foreach (var l in new[] { title, subtitle, empty, updateText, loginNote, openFolder, quit, download, modTitle, modText, modCopy }) { l.AutoSize = false; l.UseMnemonic = false; }
+        foreach (var l in new[] { title, subtitle, empty, updateText, openFolder, quit, download, modTitle, modText, modCopy }) { l.AutoSize = false; l.UseMnemonic = false; }
         empty.TextAlign = ContentAlignment.TopLeft;
         openFolder.Cursor = quit.Cursor = download.Cursor = modCopy.Cursor = Cursors.Hand;
         download.TextAlign = modCopy.TextAlign = ContentAlignment.MiddleCenter;
@@ -133,7 +132,7 @@ class Popup : Form
         searchBox.Paint += PaintSearchBox;
         updateBar.Controls.Add(updateText);
         updateBar.Controls.Add(download);
-        footer.Controls.AddRange(new Control[] { atLogin, loginNote, openFolder, quit });
+        footer.Controls.AddRange(new Control[] { atLogin, openFolder, quit });
         footer.Paint += PaintFooterLine;
         modBar.Controls.AddRange(new Control[] { modTitle, modText, modCopy });
         modBar.Paint += PaintFooterLine;
@@ -231,11 +230,11 @@ class Popup : Form
         var w = Px(PanelWidth);
         var pad = Px(16);
         BackColor = list.BackColor = theme.Bg;
-        foreach (Control c in new Control[] { title, subtitle, empty, loginNote, openFolder, quit, atLogin }) c.BackColor = theme.Bg;
+        foreach (Control c in new Control[] { title, subtitle, empty, openFolder, quit, atLogin }) c.BackColor = theme.Bg;
         title.ForeColor = theme.Text; title.Font = titleFont;
-        subtitle.ForeColor = empty.ForeColor = loginNote.ForeColor = openFolder.ForeColor = quit.ForeColor = theme.Muted;
+        subtitle.ForeColor = empty.ForeColor = openFolder.ForeColor = quit.ForeColor = theme.Muted;
         atLogin.ForeColor = theme.Text;
-        subtitle.Font = metaFont; loginNote.Font = metaFont;
+        subtitle.Font = metaFont;
         search.BackColor = theme.Field; search.ForeColor = theme.Text; searchBox.BackColor = theme.Bg;
         footer.BackColor = theme.Bg;
         if (IsHandleCreated) SetWindowTheme(list.Handle, theme.Dark ? "DarkMode_Explorer" : "Explorer", null);
@@ -301,10 +300,9 @@ class Popup : Form
 
         var footH = Px(44);
         footer.SetBounds(0, y, w, footH);
-        atLogin.Visible = !Packaged; loginNote.Visible = Packaged;
+        atLogin.Visible = !Packaged;
         atLogin.Checked = Startup.Enabled;
         atLogin.SetBounds(pad, Px(10), Px(140), Px(24));
-        loginNote.SetBounds(pad, Px(6), w - pad - Px(130), Px(34));
         quit.SetBounds(w - pad - Px(34), Px(12), Px(34), Px(20));
         openFolder.SetBounds(w - pad - Px(34) - Px(84), Px(12), Px(80), Px(20));
         openFolder.TextAlign = quit.TextAlign = ContentAlignment.MiddleRight;

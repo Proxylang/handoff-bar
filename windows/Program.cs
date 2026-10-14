@@ -24,7 +24,7 @@ using Microsoft.Win32;
 static class App
 {
     // Shares version numbers with VERSION in build.sh; one GitHub release carries both builds.
-    public const string Version = "1.4.0";
+    public const string Version = "1.4.1";
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     static extern int GetCurrentPackageFullName(ref int length, StringBuilder name);
@@ -65,10 +65,11 @@ class Tray : ApplicationContext
 {
     readonly NotifyIcon icon = new NotifyIcon();
     readonly Popup popup = new Popup(Paths.Handoffs);
+    readonly ToolStripMenuItem atLogin = new ToolStripMenuItem("Start with Windows");
+    readonly bool packaged = App.Packaged();
 
     public Tray()
     {
-        var packaged = App.Packaged();
         popup.Packaged = packaged;
         var handle = popup.Handle;  // create the window now so other threads can post to it
 
@@ -82,8 +83,12 @@ class Tray : ApplicationContext
         var menu = new ContextMenuStrip();
         menu.Items.Add("Show handoffs", null, ShowClicked);
         menu.Items.Add("Open handoffs folder", null, FolderClicked);
+        atLogin.Click += AtLoginClicked;
+        menu.Items.Add(atLogin);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Quit HandoffBar", null, QuitClicked);
+        // Read each time: the user can also change it in Task Manager or the popup.
+        menu.Opening += MenuOpening;
         icon.ContextMenuStrip = menu;
         icon.Visible = true;
 
@@ -101,6 +106,19 @@ class Tray : ApplicationContext
     {
         Directory.CreateDirectory(Paths.Handoffs);
         Process.Start("explorer.exe", "\"" + Paths.Handoffs + "\"");
+    }
+
+    bool StartsAtLogin { get { return packaged ? StoreStartup.Enabled : Startup.Enabled; } }
+
+    void MenuOpening(object sender, System.ComponentModel.CancelEventArgs e) { atLogin.Checked = StartsAtLogin; }
+
+    void AtLoginClicked(object sender, EventArgs e)
+    {
+        var on = !StartsAtLogin;
+        if (packaged) StoreStartup.Enabled = on; else Startup.Enabled = on;
+        // Windows does not let a Store app turn its startup back on after the user turned it off in Task Manager.
+        if (on && !StartsAtLogin)
+            icon.ShowBalloonTip(8000, "HandoffBar", "Startup was turned off in Task Manager. Turn it on there: Task Manager > Startup apps > HandoffBar.", ToolTipIcon.Info);
     }
 
     void QuitClicked(object sender, EventArgs e) { icon.Visible = false; Application.Exit(); }
@@ -135,6 +153,42 @@ static class Startup
                     if (value) k.SetValue(Name, "\"" + Application.ExecutablePath + "\"");
                     else k.DeleteValue(Name, false);
                 }
+            }
+            catch { }
+        }
+    }
+}
+
+/// Start at login for the Store app: the startup task declared in package/AppxManifest.xml.
+/// Names are written in full: a using line for Windows.Foundation would clash with System.Drawing's Point and Size.
+static class StoreStartup
+{
+    const string TaskId = "HandoffBarStartup";
+
+    // Waits by polling: the AsTask helper needs the Windows SDK's Windows.winmd, which build.ps1 does not have.
+    static T Wait<T>(Windows.Foundation.IAsyncOperation<T> op)
+    {
+        while (op.Status == Windows.Foundation.AsyncStatus.Started) Thread.Sleep(10);
+        return op.GetResults();
+    }
+
+    public static bool Enabled
+    {
+        get
+        {
+            try
+            {
+                var state = Wait(Windows.ApplicationModel.StartupTask.GetAsync(TaskId)).State;
+                return state == Windows.ApplicationModel.StartupTaskState.Enabled || state == Windows.ApplicationModel.StartupTaskState.EnabledByPolicy;
+            }
+            catch { return false; }
+        }
+        set
+        {
+            try
+            {
+                var task = Wait(Windows.ApplicationModel.StartupTask.GetAsync(TaskId));
+                if (value) Wait(task.RequestEnableAsync()); else task.Disable();
             }
             catch { }
         }

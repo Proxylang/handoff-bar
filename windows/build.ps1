@@ -5,6 +5,8 @@ $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
 $fw = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319"
+# Windows API descriptions for the Store startup task (StoreStartup in Program.cs). Every Windows 10 and 11 has them.
+$wm = "$env:WINDIR\System32\WinMetadata"
 New-Item -ItemType Directory -Force dist | Out-Null
 
 & "$fw\csc.exe" /nologo /target:winexe /optimize+ /platform:anycpu /codepage:65001 `
@@ -12,6 +14,7 @@ New-Item -ItemType Directory -Force dist | Out-Null
   /resource:Tray.ico,Tray.ico `
   /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll `
   /reference:System.Windows.Forms.dll /reference:"$fw\System.Web.Extensions.dll" `
+  /reference:"$fw\System.Runtime.dll" /reference:"$wm\Windows.Foundation.winmd" /reference:"$wm\Windows.ApplicationModel.winmd" `
   Program.cs Writer.cs Handoffs.cs Popup.cs
 if ($LASTEXITCODE -ne 0) { throw "csc failed" }
 

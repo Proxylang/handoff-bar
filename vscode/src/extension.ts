@@ -21,6 +21,10 @@ const listMs = 5000
 const longestCacheMs = 3600 * 1000
 // The Claude extension's chat tab (its webview panel's view type ends with this).
 const claudePanel = 'claudeVSCodePanel'
+// How long the status bar shows "Handoff copied!" in green after a copy. VS Code popups have no
+// color option, so the confirmation lives in the status bar item instead.
+const copiedMs = 3000
+let copiedUntil = 0
 
 type Seen = ChatFile & { size: number; cache?: { lastRequest: number; cache: number } }
 // What each chat file held at its last mtime, so a file is read again only when it changes.
@@ -73,7 +77,14 @@ async function listChats(): Promise<Seen[]> {
   return found
 }
 
-async function copyHandoff(): Promise<void> {
+function showCopied(item: vscode.StatusBarItem): void {
+  item.text = '✓ Handoff copied!'
+  item.color = new vscode.ThemeColor('charts.green')
+  item.backgroundColor = undefined
+  item.show()
+}
+
+async function copyHandoff(item: vscode.StatusBarItem): Promise<void> {
   try {
     const chat = pickChat(await listChats(), activeClaudeLabel())
     if (chat === undefined) {
@@ -84,8 +95,8 @@ async function copyHandoff(): Promise<void> {
     await fs.mkdir(handoffsDir, { recursive: true })
     await fs.writeFile(join(handoffsDir, `${chat.id}.md`), text)
     await vscode.env.clipboard.writeText(text)
-    const name = chat.title === '' ? 'this chat' : `"${chat.title}"`
-    void vscode.window.showInformationMessage(`Handoff for ${name} copied. Paste it into a new chat.`)
+    copiedUntil = Date.now() + copiedMs
+    showCopied(item)
   } catch (error) {
     void vscode.window.showErrorMessage(`HandoffBar could not copy the handoff: ${String(error)}`)
   }
@@ -101,6 +112,8 @@ async function tick(item: vscode.StatusBarItem): Promise<void> {
     listedAt = now
     chats = await listChats()
   }
+  if (now < copiedUntil) return showCopied(item)
+  item.color = undefined
   const chat = pickChat(
     chats.filter(c => now - c.mtimeMs < longestCacheMs),
     activeClaudeLabel(),
@@ -138,7 +151,7 @@ export function activate(context: vscode.ExtensionContext): void {
   }, tickMs)
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('handoffbar.copy', copyHandoff),
+    vscode.commands.registerCommand('handoffbar.copy', () => copyHandoff(item)),
     item,
     { dispose: () => clearInterval(timer) },
   )

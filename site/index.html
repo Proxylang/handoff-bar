@@ -11,6 +11,8 @@
 <link rel="icon" href="/favicon.png">
 <!-- Proxylang language switcher, same site key as proxylang.dev. It mounts into #proxylang-widget. -->
 <link rel="preconnect" href="https://proxy.proxylang.dev" crossorigin="anonymous">
+<!-- No Live Chat on this site. script.js skips the chat loader when this global is already set. -->
+<script>window.__proxylangChat = {};</script>
 <script src="https://proxy.proxylang.dev/script.js" data-key="pk_d0f10be0bed070fa88c3" defer crossorigin="anonymous"></script>
 <style>
   :root {

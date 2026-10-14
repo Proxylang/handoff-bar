@@ -2,7 +2,7 @@
   "name": "handoffbar",
   "displayName": "HandoffBar for Claude Code",
   "description": "Copy a Claude Code chat's handoff with one click from the chat tab, and see how long its prompt cache has left.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "proxylang",
   "license": "MIT",
   "icon": "media/icon.png",
