@@ -19,6 +19,9 @@ const catchUpMs = 7 * 24 * 60 * 60 * 1000
 
 // Minutes since this chat's cache expired; null while it is live or unknown.
 const expiredFor = atom({ plugin: 'handoffbar', key: 'expiredFor' } as const, null)
+// Seconds until this chat's cache expires; null once expired or unknown. The band in VS Code,
+// the desktop app and the phone shows it, so those surfaces need no status line under the band.
+const cacheLeft = atom({ plugin: 'handoffbar', key: 'cacheLeft' } as const, null)
 // The person hid the warning for this expiry. A new reply shows it again next time.
 const isHidden = atom({ plugin: 'handoffbar', key: 'isHidden' } as const, false)
 // This chat has a reply, so there is a handoff to copy. A new chat shows no button until then.
@@ -43,6 +46,10 @@ let isTicking = false
 const copyLabel = '👉 Copy handoff'
 const copyHotkey = '0'
 const brandOrange = '#e8683f'
+// VS Code, the desktop app and the phone draw a real icon, so their button needs no emoji.
+const webCopyLabel = 'Copy handoff'
+// The HandoffBar app icon (vscode/media/hand-dark.svg): a white hand on an orange square.
+const handIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><rect width="16" height="16" rx="3.6" fill="#E8683F"/><g fill="#FFFFFF" transform="translate(2 1.2) scale(0.75)"><rect x="0.5" y="5" width="1.6" height="8" rx="0.5"/><path d="M2.7 6.2C2.7 4.9 3.6 4 4.9 4H14C14.8 4 15.5 4.6 15.5 5.4C15.5 6.2 14.8 6.9 14 6.9H8.4V12.4C8.4 13.3 7.7 14 6.8 14H4.9C3.6 14 2.7 13.1 2.7 11.8Z"/><rect x="7.3" y="7.4" width="3.5" height="1.9" rx="0.95"/><rect x="7.3" y="9.7" width="3.1" height="1.9" rx="0.95"/><rect x="7.3" y="12" width="2.6" height="1.9" rx="0.95"/></g></svg>`
 // Claude Code refuses a command name the user's own command or skill has, so the second
 // name is used when the first is taken.
 const commandNames = ['handoff', 'handoffbar']
@@ -59,7 +66,9 @@ function report($: $, error: unknown) {
   shownErrors.add(text)
 }
 
-const ago = (minutes: number) => (minutes === 0 ? 'just now' : `${minutes} min ago`)
+const ago = (minutes: number) =>
+  minutes === 0 ? 'just now' : minutes < 60 ? `${minutes} min ago` : `${Math.floor(minutes / 60)} h ago`
+const clockText = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 
 async function home($: $): Promise<string> {
   return (await $.env.get('HOME')) ?? (await $.env.get('USERPROFILE')) ?? ''
@@ -122,6 +131,7 @@ async function tick($: $) {
   if (found === undefined) {
     // A /clear starts a new chat with no file yet: nothing to count down or warn about.
     if ((await read($, expiredFor)) !== null) await update($, expiredFor, () => null)
+    if ((await read($, cacheLeft)) !== null) await update($, cacheLeft, () => null)
     if (await read($, hasReply)) await update($, hasReply, () => false)
     return $.ui.status(undefined)
   }
@@ -149,8 +159,18 @@ async function tick($: $) {
   const left = Math.ceil((state.lastRequest + state.cache * 1000 - now) / 1000)
   const minutes = left > 0 ? null : Math.floor(-left / 60)
   if ((await read($, expiredFor)) !== minutes) await update($, expiredFor, () => minutes)
-  const clock = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`
-  $.ui.status(minutes === null ? `Prompt cache: ${clock} left` : `Prompt cache: expired ${ago(minutes)}`)
+  const seconds = minutes === null ? left : null
+  if ((await read($, cacheLeft)) !== seconds) await update($, cacheLeft, () => seconds)
+  // VS Code, the desktop app and the phone show the timer in the band. A status line there would
+  // draw a second box under it.
+  const isTerminal = (await $.session.surfaces()).includes('terminal')
+  $.ui.status(
+    !isTerminal
+      ? undefined
+      : minutes === null
+        ? `Prompt cache: ${clockText(left)} left`
+        : `Prompt cache: expired ${ago(minutes)}`,
+  )
 
   const isTemp = tempProjectPrefixes.some(p => found.project.startsWith(p))
   if (state.isTooBig || isTemp) return
@@ -161,6 +181,13 @@ async function tick($: $) {
     written = { request: state.lastRequest, saves: due }
     await writeHandoff($, found)
   }
+}
+
+/** A Copy handoff press: copies, then shows what happened in the band for noticeMs. */
+async function copyPressed($: $, surface: Parameters<$['ui']['copy']>[0]['surface']) {
+  const text = await handoffNow($, surface)
+  await update($, notice, () => text)
+  $.clock.after(noticeMs, () => update($, notice, shown => (shown === text ? null : shown)))
 }
 
 /** Other chats from the last week whose handoff is missing or older than the chat. One file per
@@ -227,14 +254,48 @@ export const register: Register = on => {
     const minutes = await read($, expiredFor)
     const isWarning = minutes !== null && !(await read($, isHidden))
     const shown = await read($, notice)
+    const isCopied = shown?.includes(' and copied.') ?? false
+
+    if (e.surface !== 'terminal') {
+      // One line inside the frame the app draws: icon, "HandoffBar: <cache state>", the button on
+      // the right. VS Code wraps a row by default, so both rows say nowrap and the text is cut
+      // with an ellipsis when the panel is narrow. An error is the one line left to wrap: cut, it
+      // would lose its reason.
+      const { Box, Button, Svg, Text } = $.ui.resolve(e)
+      const seconds = await read($, cacheLeft)
+      const [state, color] =
+        shown !== null
+          ? [isCopied ? 'Copied ✓' : shown, isCopied ? 'success' : 'warning']
+          : minutes !== null
+            ? [`Prompt cache expired ${ago(minutes)} · next message costs full price`, 'warning']
+            : [seconds === null ? 'Prompt cache' : `Prompt cache ${clockText(seconds)} left`, 'secondaryText']
+      const wrap = shown !== null && !isCopied ? 'wrap' : 'truncate-end'
+      return (
+        <Box flexDirection="row" flexWrap="nowrap" alignItems="center" justifyContent="space-between" columnGap={2}>
+          <Box flexDirection="row" flexWrap="nowrap" alignItems="center" columnGap={1} flexShrink={1}>
+            <Svg source={handIcon} alt="" width={16} height={16} />
+            <Text wrap={wrap}>
+              <Text wrap={wrap} bold>
+                HandoffBar
+              </Text>
+              <Text wrap={wrap} color={color}>
+                : {state}
+              </Text>
+            </Text>
+          </Box>
+          {/* VS Code fills a Button with the theme's button color and reads no color prop, so the
+              one button here is always the filled one. */}
+          <Button key="copy" label={webCopyLabel} variant="primary" onPress={press => copyPressed($, press.surface)} />
+        </Box>
+      )
+    }
+
     const { Box, Button, Text } = $.ui.resolve(e)
 
     return (
       <Box flexDirection="column">
         {shown !== null && (
-          <Text color={shown.includes(' and copied.') ? 'green' : 'yellow'}>
-            {shown.includes(' and copied.') ? `✓ ${shown}` : shown}
-          </Text>
+          <Text color={isCopied ? 'green' : 'yellow'}>{isCopied ? `✓ ${shown}` : shown}</Text>
         )}
         {isWarning && (
           <Text color="yellow">
@@ -258,11 +319,7 @@ export const register: Register = on => {
               dimColor={!isWarning}
               hover={{ color: brandOrange, dimColor: false }}
               variant={isWarning ? 'primary' : undefined}
-              onPress={async press => {
-                const text = await handoffNow($, press.surface)
-                await update($, notice, () => text)
-                $.clock.after(noticeMs, () => update($, notice, shown => (shown === text ? null : shown)))
-              }}
+              onPress={press => copyPressed($, press.surface)}
             />
           </Box>
           {isWarning && <Text> </Text>}

@@ -1,6 +1,6 @@
 {
   "name": "handoffbar",
-  "version": "1.1.0",
+  "version": "1.1.4",
   "description": "Shows how long this chat's prompt cache has left, warns when it has expired, and writes a handoff to paste into a new chat (/handoff, or /handoffbar when you already have a /handoff).",
   "author": {
     "name": "Titus Decali"

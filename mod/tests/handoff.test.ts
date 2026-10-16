@@ -29,13 +29,14 @@ const TEXT = [
 /** Answers every call the mod makes on $ beneath it, and records what it writes. `files` are
  * other files on disk by path, each read as TEXT; folders are listed from them. `taken` are
  * command names the user's own commands or skills already use. `hasChat` false is a new chat
- * whose file does not exist yet. */
+ * whose file does not exist yet. `surfaces` are where the session draws. */
 function world(
   on: On,
   readable = true,
   files: Record<string, { mtimeMs: number; size?: number }> = {},
   taken: string[] = [],
   hasChat = true,
+  surfaces: ('terminal' | 'vscode')[] = ['terminal'],
 ) {
   const clock = mock.clock(on, { now: REPLY_AT })
   mock.store(on)
@@ -49,6 +50,7 @@ function world(
   on('session.id', () => ({ value: ID }))
   on('session.root', () => ({ value: '/w/proj' }))
   on('session.cwd', () => ({ value: '/w/proj' }))
+  on('session.surfaces', () => ({ value: surfaces }))
   on('command.register', ($, e) =>
     taken.includes(e.name)
       ? { deny: `"/${e.name}" refused: it is the user's /${e.name}` }
@@ -218,12 +220,15 @@ test('the warning shows above the prompt once the cache has expired', async ($, 
   }
   await clock.set(REPLY_AT + 6 * 60_000)
   await clock.advance(1000)
-  for (const surface of ['terminal', 'desktop', 'vscode'] as const) {
+  // Only the terminal has Hide: elsewhere the band is always one row, the warning in its line.
+  for (const surface of ['desktop', 'vscode'] as const) {
     const ui = await $.ui.mount({ plugin: 'handoffbar', surface, component: 'AbovePrompt', props: props as never })
-    expect(await ui.find({ key: 'hide' })).toBeDefined()
+    expect(await ui.find({ key: 'hide' })).toBeUndefined()
+    expect(await ui.find({ text: 'HandoffBar: Prompt cache expired 1 min ago · next message costs full price' })).toBeDefined()
     await ui.unmount()
   }
-  const ui = await $.ui.mount({ plugin: 'handoffbar', surface: 'vscode', component: 'AbovePrompt', props: props as never })
+  const ui = await $.ui.mount({ plugin: 'handoffbar', surface: 'terminal', component: 'AbovePrompt', props: props as never })
+  expect(await ui.find({ key: 'hide' })).toBeDefined()
   await ui.press({ key: 'hide' })
   expect(await ui.find({ key: 'hide' })).toBeUndefined()
   expect(await ui.find({ key: 'copy' })).toBeDefined()
@@ -254,5 +259,23 @@ test('Copy handoff copies the saved handoff and sends nothing to the chat', asyn
   expect(await ui.find({ text: done })).toBeDefined()
   await clock.advance(6000)
   expect(await ui.find({ text: done })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('in VS Code the band shows the cache timer and no status line is drawn', async ($, on) => {
+  const { clock, status } = world(on, true, {}, [], true, ['vscode'])
+  await start($)
+  await clock.advance(1000)
+  expect(status.filter(text => text !== undefined)).toEqual([])
+  const props = { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 80 } as const
+  const ui = await $.ui.mount({ plugin: 'handoffbar', surface: 'vscode', component: 'AbovePrompt', props: props as never })
+  expect(await ui.find({ text: 'HandoffBar: Prompt cache 4:59 left' })).toBeDefined()
+  await ui.press({ key: 'copy' })
+  expect(await ui.find({ text: 'HandoffBar: Copied ✓' })).toBeDefined()
+  await clock.advance(6000)
+  expect(await ui.find({ text: 'HandoffBar: Prompt cache 4:53 left' })).toBeDefined()
+  await clock.set(REPLY_AT + 7 * 60_000)
+  await clock.advance(1000)
+  expect(await ui.find({ text: 'HandoffBar: Prompt cache expired 2 min ago · next message costs full price' })).toBeDefined()
   await ui.unmount()
 })
