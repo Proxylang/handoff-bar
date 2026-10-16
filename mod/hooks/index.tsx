@@ -37,7 +37,10 @@ type $ = EngineInterface
 let chat: Chat | undefined
 let searchedAt = 0
 let seenMtime = -1
-let state: { lastRequest: number; cache: number; isTooBig: boolean } | undefined
+let state: { lastRequest: number; cache: number; compactedAt: number | undefined; isTooBig: boolean } | undefined
+// This chat's last main request as the engine sent it, and its last compaction. Exact where the
+// file gives only the row before a reply, and the only source for a chat too long to read.
+let seen: { chat: string; requestAt?: number; compactedAt?: number } | undefined
 // The last reply a save was made for, and how many of its save times are done.
 let written: { request: number; saves: number } | undefined
 let isTicking = false
@@ -140,23 +143,35 @@ async function tick($: $) {
   if (stat.mtimeMs !== seenMtime) {
     seenMtime = stat.mtimeMs
     const before = state?.lastRequest
-    if (stat.size <= readLimit) {
-      const parsed = cacheState(await $.fs.read(found.path))
-      state = parsed && { ...parsed, isTooBig: false }
-      // Claude Code picks the cache length per account, so a long chat uses the last one seen.
-      if (parsed) await $.store.set('cache', parsed.cache)
-    } else {
-      // Too long to read: the file's last write stands in for the last reply.
-      const cache = Number((await $.store.get('cache')) ?? 300)
-      state = { lastRequest: stat.mtimeMs, cache, isTooBig: true }
-    }
+    const isTooBig = stat.size > readLimit
+    const parsed = isTooBig ? undefined : cacheState(await $.fs.read(found.path))
+    // Claude Code picks the cache length per account, so a chat with no write in reach uses the
+    // last one seen. None seen: no countdown, rather than a guess.
+    if (parsed?.cache !== undefined) await $.store.set('cache', parsed.cache)
+    const stored = await $.store.get('cache')
+    const cache = parsed?.cache ?? (typeof stored === 'number' ? stored : undefined)
+    const sent = seen?.chat === found.id ? seen : undefined
+    const lastRequest = Math.max(parsed?.lastRequest ?? 0, sent?.requestAt ?? 0)
+    const compactedAt = Math.max(parsed?.compactedAt ?? 0, sent?.compactedAt ?? 0)
+    state =
+      lastRequest > 0 && cache !== undefined
+        ? { lastRequest, cache, compactedAt: compactedAt > lastRequest ? compactedAt : undefined, isTooBig }
+        : undefined
     if (state?.lastRequest !== before) await update($, isHidden, () => false)
-    if ((await read($, hasReply)) !== (state !== undefined)) await update($, hasReply, () => state !== undefined)
+    // A chat too long to read still has the menu bar app's handoff to copy.
+    const replied = isTooBig || parsed !== undefined
+    if ((await read($, hasReply)) !== replied) await update($, hasReply, () => replied)
   }
-  if (state === undefined) return $.ui.status(undefined)
+  if (state === undefined) {
+    if ((await read($, expiredFor)) !== null) await update($, expiredFor, () => null)
+    if ((await read($, cacheLeft)) !== null) await update($, cacheLeft, () => null)
+    return $.ui.status(undefined)
+  }
 
   const now = await $.clock.now()
-  const left = Math.ceil((state.lastRequest + state.cache * 1000 - now) / 1000)
+  // After a compaction the cache covers the old chat, not the new one: expired from then on.
+  const expiresAt = state.compactedAt ?? state.lastRequest + state.cache * 1000
+  const left = Math.ceil((expiresAt - now) / 1000)
   const minutes = left > 0 ? null : Math.floor(-left / 60)
   if ((await read($, expiredFor)) !== minutes) await update($, expiredFor, () => minutes)
   const seconds = minutes === null ? left : null
@@ -246,6 +261,29 @@ export const register: Register = on => {
 
   // Only the name this mod registered: a user's own /handoff stays theirs.
   on('command.run', async ($, e, next) => (e.command === command ? { text: await handoffNow($) } : next(e)))
+
+  // A main request that got an answer restarted the cache timer when it was sent. Subagents
+  // have caches of their own.
+  on('turn.step', async function* ($, e, next) {
+    const sentAt = await $.clock.now()
+    const result = yield* next(e)
+    if (e.agentId === undefined && result.usage !== null) {
+      const chat = await $.session.id()
+      seen = { ...(seen?.chat === chat ? seen : undefined), chat, requestAt: sentAt }
+      seenMtime = -1
+    }
+    return result
+  })
+
+  on('session.compact', async ($, e, next) => {
+    const result = await next(e)
+    if (e.agentId === undefined) {
+      const chat = await $.session.id()
+      seen = { ...(seen?.chat === chat ? seen : undefined), chat, compactedAt: await $.clock.now() }
+      seenMtime = -1
+    }
+    return result
+  })
 
   // Once the chat has a reply the Copy handoff button is always there, so the person never has to
   // type a message (which would re-send the chat) to get the handoff. A press only copies.

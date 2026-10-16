@@ -37,6 +37,7 @@ function world(
   taken: string[] = [],
   hasChat = true,
   surfaces: ('terminal' | 'vscode')[] = ['terminal'],
+  chatSize = TEXT.length,
 ) {
   const clock = mock.clock(on, { now: REPLY_AT })
   mock.store(on)
@@ -73,7 +74,9 @@ function world(
     return { value: [...entries.values()] }
   })
   on('fs.exists', ($, e) => ({ value: hasChat && e.path === CHAT }))
-  on('fs.stat', () => ({ value: { kind: 'file', size: TEXT.length, mtimeMs: REPLY_AT, isLink: false } }))
+  on('fs.stat', ($, e) => ({
+    value: { kind: 'file', size: e.path === CHAT ? chatSize : TEXT.length, mtimeMs: REPLY_AT, isLink: false },
+  }))
   on('fs.read', ($, e) =>
     readable ? { value: e.path === CHAT || e.path in files ? TEXT : '' } : { deny: 'disk unplugged' },
   )
@@ -277,5 +280,63 @@ test('in VS Code the band shows the cache timer and no status line is drawn', as
   await clock.set(REPLY_AT + 7 * 60_000)
   await clock.advance(1000)
   expect(await ui.find({ text: 'HandoffBar: Prompt cache expired 2 min ago · next message costs full price' })).toBeDefined()
+  await ui.unmount()
+})
+
+const row = (o: Record<string, unknown>) => JSON.stringify(o)
+const write5m = { cache_creation: { ephemeral_5m_input_tokens: 900, ephemeral_1h_input_tokens: 0 } }
+
+test('the cache timer starts when the request was sent, not when its reply was written', () => {
+  const sent = REPLY_AT - 240_000
+  const text = [
+    row({ type: 'user', timestamp: new Date(sent).toISOString(), message: { role: 'user', content: 'Go' } }),
+    row({ type: 'assistant', timestamp: new Date(REPLY_AT - 1000).toISOString(), message: { id: 'm1', usage: write5m } }),
+    row({ type: 'assistant', timestamp: new Date(REPLY_AT).toISOString(), message: { id: 'm1', usage: write5m } }),
+  ].join('\n')
+  expect(cacheState(text)).toEqual({ lastRequest: sent, cache: 300, compactedAt: undefined })
+})
+
+test('no cache write in the chat means no cache length, not a 5-minute guess', () => {
+  const text = row({ type: 'assistant', timestamp: new Date(REPLY_AT).toISOString(), message: { id: 'm1', usage: {} } })
+  expect(cacheState(text)?.cache).toBeUndefined()
+})
+
+test('a compaction after the last reply is reported; one before it is not', () => {
+  const at = (ms: number) => new Date(ms).toISOString()
+  const compacted = row({ type: 'system', subtype: 'compact_boundary', timestamp: at(REPLY_AT + 60_000) })
+  expect(cacheState(`${TEXT}\n${compacted}`)?.compactedAt).toBe(REPLY_AT + 60_000)
+  const later = row({ type: 'assistant', timestamp: at(REPLY_AT + 120_000), message: { id: 'm2', usage: write5m } })
+  expect(cacheState(`${TEXT}\n${compacted}\n${later}`)?.compactedAt).toBeUndefined()
+})
+
+test('a request the engine sends restarts the countdown from the moment it was sent', async ($, on) => {
+  const { clock, status } = world(on)
+  on('turn.step', async function* (_$, e) {
+    return {
+      turnId: e.turnId,
+      index: e.index,
+      answer: '',
+      toolUses: [],
+      stopReason: 'end_turn',
+      usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 900, cache_creation_input_tokens: 0, model: 'm' },
+    }
+  })
+  await start($)
+  await clock.set(REPLY_AT + 60_000)
+  const step = $.turn.step({ turnId: 't', index: 0, model: 'm', messageCount: 2 })
+  for await (const _ of step) {
+  }
+  await clock.advance(1000)
+  expect(status.at(-1)).toBe('Prompt cache: 4:59 left')
+})
+
+test('a chat too long to read shows no guessed countdown, and still offers its handoff', async ($, on) => {
+  const { clock, status } = world(on, true, {}, [], true, ['terminal'], 5 * 1024 * 1024)
+  await start($)
+  await clock.advance(1000)
+  expect(status.filter(text => text !== undefined)).toEqual([])
+  const props = { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 80 } as const
+  const ui = await $.ui.mount({ plugin: 'handoffbar', surface: 'terminal', component: 'AbovePrompt', props: props as never })
+  expect(await ui.find({ key: 'copy' })).toBeDefined()
   await ui.unmount()
 })

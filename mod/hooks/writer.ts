@@ -63,34 +63,61 @@ function jsonLines(text: string): Json[] {
 // ISO8601DateFormatter with .withFractionalSeconds parses only timestamps that have them.
 const isoDate = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+(Z|[+-]\d{2}:?\d{2})$/
 
-/**
- * Time of the last reply (ms since the epoch) and the chat's cache length (seconds), read from
- * the end of the chat file. The API reports which cache a request wrote:
- * `ephemeral_1h_input_tokens` or `ephemeral_5m_input_tokens`.
- */
-export function cacheState(text: string): { lastRequest: number; cache: number } | undefined {
-  const bytes = new TextEncoder().encode(text)
-  const tail = bytes.length > tailBytes ? new TextDecoder().decode(bytes.subarray(bytes.length - tailBytes)) : text
-  // The desktop app saves its tool list (over 1 MB) after a reply, which can push the reply out
-  // of the file end. Then the whole file is read.
-  return lastReply(tail) ?? (tail === text ? undefined : lastReply(text))
+export type CacheState = {
+  /** When the last reply's request was sent (ms since the epoch): the cache timer starts there. */
+  lastRequest: number
+  /** The cache length (seconds) the last cache write named; undefined when no write is found. */
+  cache: number | undefined
+  /** When the chat was compacted after that reply: the cache does not cover the new chat. */
+  compactedAt: number | undefined
 }
 
-function lastReply(text: string): { lastRequest: number; cache: number } | undefined {
+/**
+ * The last reply's cache timing, read from the end of the chat file, by the rules the VS Code
+ * extension uses for its "Prompt cache" clock. The API reports which cache a request wrote:
+ * `ephemeral_1h_input_tokens` or `ephemeral_5m_input_tokens`.
+ */
+export function cacheState(text: string): CacheState | undefined {
+  const bytes = new TextEncoder().encode(text)
+  const tail = bytes.length > tailBytes ? new TextDecoder().decode(bytes.subarray(bytes.length - tailBytes)) : text
+  // The desktop app saves its tool list (over 1 MB) after a reply, which can push the reply, or
+  // the last cache write, out of the file end. Then the whole file is read.
+  const found = lastReply(tail)
+  return found?.cache !== undefined || tail === text ? found : lastReply(text) ?? found
+}
+
+const timeOf = (o: Json): number | undefined => {
+  const ts = str(o.timestamp)
+  return ts !== undefined && isoDate.test(ts) ? Date.parse(ts) : undefined
+}
+
+function lastReply(text: string): CacheState | undefined {
+  const rows = jsonLines(text).filter(o => !bool(o.isSidechain))
+  let reply = rows.length - 1
+  while (reply >= 0 && rows[reply]?.type !== 'assistant') reply--
+  if (reply < 0) return undefined
+  const after = rows.slice(reply + 1).filter(o => o.type === 'system' && o.subtype === 'compact_boundary')
+  const compactedAt = after.length > 0 ? timeOf(after[after.length - 1] as Json) : undefined
+
+  // One request writes one row per content block, all with its message id. The request was sent
+  // when the row before its first block was written: the prompt, or the tool results it carries.
+  const id = str(dict(rows[reply]?.message)?.id)
+  let first = reply
+  while (first > 0 && rows[first - 1]?.type === 'assistant' && id !== undefined && str(dict(rows[first - 1]?.message)?.id) === id) first--
   let lastRequest: number | undefined
+  for (let i = first - 1; i >= 0 && lastRequest === undefined; i--) lastRequest = timeOf(rows[i] as Json)
+  lastRequest ??= timeOf(rows[first] as Json)
+  if (lastRequest === undefined) return undefined
+
+  // A reply that only read the cache keeps the length of the write before it.
   let cache: number | undefined
-  for (const o of jsonLines(text).reverse()) {
-    if (o.type !== 'assistant' || bool(o.isSidechain)) continue
-    const ts = str(o.timestamp)
-    if (lastRequest === undefined && ts !== undefined && isoDate.test(ts)) lastRequest = Date.parse(ts)
-    const created = dict(dict(dict(o.message)?.usage)?.cache_creation)
+  for (let i = reply; i >= 0 && cache === undefined; i--) {
+    if (rows[i]?.type !== 'assistant') continue
+    const created = dict(dict(dict(rows[i]?.message)?.usage)?.cache_creation)
     if ((int(created?.ephemeral_1h_input_tokens) ?? 0) > 0) cache = 3600
     else if ((int(created?.ephemeral_5m_input_tokens) ?? 0) > 0) cache = 300
-    if (lastRequest !== undefined && cache !== undefined) break
   }
-  if (lastRequest === undefined) return undefined
-  // No cache write in the file end means only cache reads. The default API cache is 5 minutes.
-  return { lastRequest, cache: cache ?? 300 }
+  return { lastRequest, cache, compactedAt }
 }
 
 // MARK: - Swift string rules
