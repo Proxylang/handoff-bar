@@ -70,6 +70,11 @@ if [ "${1:-}" = release ]; then
   # Icon positions match the arrow in make-dmg-background.swift (640x400 window).
   osascript <<EOF
 tell application "Finder"
+  -- Finder lists a newly attached disk a few seconds after hdiutil returns.
+  repeat 30 times
+    if exists disk "$(basename "$mount")" then exit repeat
+    delay 1
+  end repeat
   tell disk "$(basename "$mount")"
     open
     set current view of container window to icon view
