@@ -7,7 +7,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import * as vscode from 'vscode'
 
-import { buildHandoff, cacheState, tempProjectPrefixes } from '../../mod/hooks/writer'
+import { buildHandoff, cacheState, tempProjectPrefixes, type CacheState } from '../../mod/hooks/writer'
 import { chatTitle, pickChat, projectFolderName, type ChatFile } from './chats'
 
 const claudeDir = join(homedir(), '.claude')
@@ -26,7 +26,7 @@ const claudePanel = 'claudeVSCodePanel'
 const copiedMs = 3000
 let copiedUntil = 0
 
-type Seen = ChatFile & { size: number; cache?: { lastRequest: number; cache: number } }
+type Seen = ChatFile & { size: number; cache?: CacheState }
 // What each chat file held at its last mtime, so a file is read again only when it changes.
 const seen = new Map<string, Seen>()
 let chats: Seen[] = []
@@ -121,10 +121,15 @@ async function tick(item: vscode.StatusBarItem): Promise<void> {
   if (chat === undefined) return item.hide()
 
   const state = chat.cache
-  const left = state && Math.ceil((state.lastRequest + state.cache * 1000 - now) / 1000)
+  // A compaction after the last reply ends the cache then. No cache write found: no countdown, not a guess.
+  const end = state?.compactedAt ?? (state?.cache === undefined ? undefined : state.lastRequest + state.cache * 1000)
+  const left = end === undefined ? undefined : Math.ceil((end - now) / 1000)
   const name = chat.title === '' ? 'this chat' : `"${chat.title}"`
-  if (left === undefined) {
+  if (state === undefined) {
     item.text = '👉 Cache: waiting for first reply'
+    item.backgroundColor = undefined
+  } else if (left === undefined) {
+    item.text = '👉 Copy handoff'
     item.backgroundColor = undefined
   } else if (left > 0) {
     item.text = `👉 Cache ${clock(left)} left`

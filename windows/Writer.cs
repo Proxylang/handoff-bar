@@ -79,7 +79,7 @@ static class Writer
     const int RecentPrompts = 10;
     // Cut each prompt so one pasted log cannot fill the file.
     const int PromptChars = 500;
-    const int LastReplyChars = 1500;
+    // The last reply is kept whole: its end holds the open question and the next steps.
     const int MaxFiles = 40;
     // Claude's own summary of a chat that ran out of room. Long chats produce ~20,000 characters;
     // the first part holds the goal and decisions, the rest is detail the new chat can read itself.
@@ -411,7 +411,7 @@ static class Writer
             lines.AddRange(files.Skip(Math.Max(0, files.Count - MaxFiles)).Select(f => "- " + f));
             lines.Add("");
         }
-        if (lastReply.Length > 0) lines.AddRange(new[] { "## Last reply from the old chat", "", Cut(lastReply, LastReplyChars), "" });
+        if (lastReply.Length > 0) lines.AddRange(new[] { "## Last reply from the old chat", "", lastReply, "" });
 
         try
         {

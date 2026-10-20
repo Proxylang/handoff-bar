@@ -24,7 +24,7 @@ using Microsoft.Win32;
 static class App
 {
     // Shares version numbers with VERSION in build.sh; one GitHub release carries both builds.
-    public const string Version = "1.4.1";
+    public const string Version = "1.4.2";
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     static extern int GetCurrentPackageFullName(ref int length, StringBuilder name);

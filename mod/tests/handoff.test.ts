@@ -175,6 +175,15 @@ test('when the user has their own /handoff, the mod uses /handoffbar and still c
   expect(writes.get(OUT)).toBe(buildHandoff(TEXT, CHAT))
 })
 
+test('a long last reply is kept whole, so its next steps at the end reach the new chat', () => {
+  const reply = `${'Detail. '.repeat(400)}\n\nWHAT YOU NEED TO DO NEXT:\n- 1. Reply A or B.\n- 3. Deploy the blog so the new card shows.`
+  const chat = [
+    { type: 'user', cwd: '/w/proj', message: { role: 'user', content: 'Fix it' } },
+    { type: 'assistant', timestamp: '2026-10-08T08:00:00.000Z', message: { content: [{ type: 'text', text: reply }] } },
+  ].map(o => JSON.stringify(o)).join('\n')
+  expect(buildHandoff(chat, CHAT)).toContain(`## Last reply from the old chat\n\n${reply}\n`)
+})
+
 test('the last reply is found behind a row longer than the 512 KB read from the end', async () => {
   // The desktop app saves its tool list (about 1.1 MB) in the chat file after a reply.
   const tools = JSON.stringify({ type: 'attachment', attachment: { type: 'prompt_snapshot', tools: 'x'.repeat(1_200_000) } })

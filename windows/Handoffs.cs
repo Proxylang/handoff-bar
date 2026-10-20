@@ -13,7 +13,7 @@ class Handoff
     // the chat's cache refreshes and a new handoff carries the new name anyway.
     const int RenameTailBytes = 64 * 1024;
 
-    public string Id, FilePath, Title, Project;
+    public string Id, FilePath, Title, Project, LastRequest;
     public DateTime Date;
     /// True when the tab was renamed after the handoff was written.
     public bool Renamed;
@@ -42,6 +42,10 @@ class Handoff
             || folder.IndexOf(@"\AppData\Local\Temp", StringComparison.OrdinalIgnoreCase) >= 0
             || folder.StartsWith("/private/var/folders/") || folder.StartsWith("/tmp");
         Project = FromTempFolder ? "" : Path.GetFileName(folder.TrimEnd('\\', '/'));
+        // The last numbered line under "Recent requests" is the newest ask. Shown on hover.
+        LastRequest = lines.SkipWhile(l => !l.StartsWith("## Recent requests")).Skip(1)
+            .TakeWhile(l => !l.StartsWith("## ")).LastOrDefault(l => l.Length > 0 && char.IsDigit(l[0])) ?? "";
+        LastRequest = LastRequest.TrimEnd('\r');
     }
 
     /// The newest tab name in the end of a chat file, if the user renamed the tab.

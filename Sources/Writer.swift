@@ -30,7 +30,7 @@ let tempProjectPrefixes = ["-private-var-folders-", "-private-tmp", "-tmp"]
 let recentPrompts = 10
 // Cut each prompt so one pasted log cannot fill the file.
 let promptChars = 500
-let lastReplyChars = 1500
+// The last reply is kept whole: its end holds the open question and the next steps.
 let maxFiles = 40
 // Claude's own summary of a chat that ran out of room. Long chats produce ~20,000 characters;
 // the first part holds the goal and decisions, the rest is detail the new chat can read itself.
@@ -352,7 +352,7 @@ func writeHandoff(_ chat: URL) -> Bool {
         lines.append("")
     }
     if !lastReply.isEmpty {
-        lines += ["## Last reply from the old chat", "", cut(lastReply, lastReplyChars), ""]
+        lines += ["## Last reply from the old chat", "", lastReply, ""]
     }
     try? FileManager.default.createDirectory(at: handoffDir, withIntermediateDirectories: true)
     let out = handoffDir.appendingPathComponent(session + ".md")

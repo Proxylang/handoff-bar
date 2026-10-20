@@ -40,6 +40,23 @@ class Theme
 class SmoothList : ListBox
 {
     public SmoothList() { SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true); }
+
+    // The native list box ignores the styles above and erases every row before drawing it, so
+    // rows flashed on hover. Rows fill their own background; only the strip under the last row is filled here.
+    protected override void WndProc(ref Message m)
+    {
+        if (m.Msg == 0x14 /* WM_ERASEBKGND */)
+        {
+            var bottom = Items.Count == 0 ? 0 : GetItemRectangle(Items.Count - 1).Bottom;
+            if (bottom < ClientSize.Height)
+                using (var g = Graphics.FromHdc(m.WParam))
+                using (var b = new SolidBrush(BackColor))
+                    g.FillRectangle(b, 0, bottom, ClientSize.Width, ClientSize.Height - bottom);
+            m.Result = (IntPtr)1;
+            return;
+        }
+        base.WndProc(ref m);
+    }
 }
 
 class Popup : Form
@@ -53,6 +70,11 @@ class Popup : Form
     // Clicking the tray icon while the panel is open first closes it (focus leaves), then the click
     // arrives. A click this soon after closing means "close", not "open again".
     const int ReopenGuardMs = 300;
+    // A row's full title and last ask show only after the pointer rests on it this long.
+    // Shown at once, the box popped up on every row the pointer crossed.
+    const int RowTipDelayMs = 2000;
+    // Line length in that box, so a long ask does not stretch across the screen.
+    const int RowTipLineChars = 70;
 
     [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
     [DllImport("uxtheme.dll", CharSet = CharSet.Unicode)] static extern int SetWindowTheme(IntPtr hwnd, string app, string idList);
@@ -79,6 +101,10 @@ class Popup : Form
     // Keeps the mod bar up, saying "Copied", until the panel closes.
     bool modJustCopied;
     readonly ToolTip tip = new ToolTip();
+    // No fade: with it the old box stays on screen for a moment after the pointer moves on.
+    readonly ToolTip rowTip = new ToolTip { ShowAlways = true, UseAnimation = false, UseFading = false };
+    // Full name: Program.cs also imports System.Threading, and the test scripts compile all files as one.
+    readonly System.Windows.Forms.Timer rowTipTimer = new System.Windows.Forms.Timer { Interval = RowTipDelayMs };
     Font titleFont, rowTitleFont, metaFont, idFont, headerFont, iconFont;
 
     [DllImport("user32.dll")] static extern uint GetDpiForWindow(IntPtr hwnd);
@@ -145,6 +171,7 @@ class Popup : Form
         list.MouseMove += HoverRow;
         list.MouseLeave += LeaveList;
         list.MouseClick += ClickRow;
+        rowTipTimer.Tick += ShowRowTip;
 
         Controls.AddRange(new Control[] { updateBar, title, subtitle, searchBox, list, empty, modBar, footer });
 
@@ -391,13 +418,44 @@ class Popup : Form
     {
         var i = list.IndexFromPoint(e.Location);
         if (i == hover) return;
+        // Redraw only the two rows that changed.
+        InvalidateRow(hover);
         hover = i;
-        list.Invalidate();
+        InvalidateRow(i);
         var h = i >= 0 && i < items.Count ? items[i] as Handoff : null;
         list.Cursor = h != null ? Cursors.Hand : Cursors.Default;
+        HideRowTip();
+        if (h != null) rowTipTimer.Start();
     }
 
-    void LeaveList(object sender, EventArgs e) { hover = -1; list.Invalidate(); }
+    void InvalidateRow(int i) { if (i >= 0 && i < list.Items.Count) list.Invalidate(list.GetItemRectangle(i)); }
+
+    void ShowRowTip(object sender, EventArgs e)
+    {
+        rowTipTimer.Stop();
+        var h = hover >= 0 && hover < items.Count ? items[hover] as Handoff : null;
+        if (h == null || !Visible) return;
+        var ask = h.LastRequest.Length == 0 ? "Click to copy" : "Last ask: " + h.LastRequest;
+        var at = list.PointToClient(Cursor.Position);
+        rowTip.Show(Wrap(h.Title) + "\n" + Wrap(ask), list, at.X + Px(12), at.Y + Px(20));
+    }
+
+    void HideRowTip() { rowTipTimer.Stop(); rowTip.Hide(list); }
+
+    static string Wrap(string s)
+    {
+        var lines = new List<string>();
+        var line = "";
+        foreach (var word in s.Split(' '))
+        {
+            if (line.Length > 0 && line.Length + 1 + word.Length > RowTipLineChars) { lines.Add(line); line = word; }
+            else line = line.Length == 0 ? word : line + " " + word;
+        }
+        lines.Add(line);
+        return string.Join("\n", lines.ToArray());
+    }
+
+    void LeaveList(object sender, EventArgs e) { InvalidateRow(hover); hover = -1; HideRowTip(); }
 
     void ClickRow(object sender, MouseEventArgs e)
     {
@@ -429,8 +487,8 @@ class Popup : Form
         modJustCopied = true;
         LayoutAll();
     }
-    void HideOnDeactivate(object sender, EventArgs e) { Hide(); lastHide = Environment.TickCount; }
-    void EscapeCloses(object sender, KeyEventArgs e) { if (e.KeyCode == Keys.Escape) Hide(); }
+    void HideOnDeactivate(object sender, EventArgs e) { HideRowTip(); Hide(); lastHide = Environment.TickCount; }
+    void EscapeCloses(object sender, KeyEventArgs e) { if (e.KeyCode == Keys.Escape) { HideRowTip(); Hide(); } }
 
     static string DayLabel(DateTime d)
     {

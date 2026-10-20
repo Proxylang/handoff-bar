@@ -21,7 +21,7 @@ export const tempProjectPrefixes = ['-private-var-folders-', '-private-tmp', '-t
 
 const recentPrompts = 10
 const promptChars = 500
-const lastReplyChars = 1500
+// The last reply is kept whole: its end holds the open question and the next steps.
 const maxFiles = 40
 const summaryChars = 8000
 const decisionAnswerChars = 3
@@ -384,7 +384,7 @@ export function buildHandoff(text: string, chatPath: string): string {
     out.push('')
   }
   if (lastReply !== '') {
-    out.push('## Last reply from the old chat', '', cut(lastReply, lastReplyChars), '')
+    out.push('## Last reply from the old chat', '', lastReply, '')
   }
   return out.join('\n')
 }
