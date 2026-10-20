@@ -10,7 +10,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-VERSION=1.4.2
+# Same version in windows/Program.cs, vscode/package.json, and mod/.claude-plugin/plugin.json.
+VERSION=1.4.3
 # SMAppService (open at login) needs macOS 13.
 MIN_MACOS=13.0
 app=build/HandoffBar.app

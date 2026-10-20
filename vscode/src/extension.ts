@@ -7,7 +7,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import * as vscode from 'vscode'
 
-import { buildHandoff, cacheState, tempProjectPrefixes, type CacheState } from '../../mod/hooks/writer'
+import { buildHandoff, cacheState, isHelperProject, type CacheState } from '../../mod/hooks/writer'
 import { chatTitle, pickChat, projectFolderName, type ChatFile } from './chats'
 
 const claudeDir = join(homedir(), '.claude')
@@ -43,7 +43,7 @@ async function projectFolders(): Promise<string[]> {
   const open = vscode.workspace.workspaceFolders?.map(f => projectFolderName(f.uri.fsPath))
   if (open && open.length > 0) return open
   const all = await fs.readdir(projectsDir).catch(() => [] as string[])
-  return all.filter(name => !tempProjectPrefixes.some(p => name.startsWith(p)))
+  return all.filter(name => !isHelperProject(name))
 }
 
 async function listChats(): Promise<Seen[]> {

@@ -5,7 +5,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import { buildHandoff, cacheState, saveTimes, tempProjectPrefixes } from './writer'
+import { buildHandoff, cacheState, isHelperProject, saveTimes } from './writer'
 
 // $.fs.read refuses files over 4 MiB. Longer chats get the countdown, not the handoff.
 const readLimit = 4 * 1024 * 1024
@@ -187,8 +187,7 @@ async function tick($: $) {
         : `Prompt cache: expired ${ago(minutes)}`,
   )
 
-  const isTemp = tempProjectPrefixes.some(p => found.project.startsWith(p))
-  if (state.isTooBig || isTemp) return
+  if (state.isTooBig || isHelperProject(found.project)) return
   const quiet = (now - state.lastRequest) / 1000
   const due = saveTimes(state.cache).filter(t => quiet >= t).length
   const done = written?.request === state.lastRequest ? written.saves : 0
@@ -214,7 +213,7 @@ async function staleChats($: $): Promise<Chat[]> {
   const saved = new Map((await $.fs.list(`${claude}/handoffs`).catch(() => [])).map(e => [e.name, e.mtimeMs]))
   const found: (Chat & { mtimeMs: number })[] = []
   for (const dir of await $.fs.list(`${claude}/projects`).catch(() => [])) {
-    if (dir.kind !== 'dir' || tempProjectPrefixes.some(p => dir.name.startsWith(p))) continue
+    if (dir.kind !== 'dir' || isHelperProject(dir.name)) continue
     for (const file of await $.fs.list(`${claude}/projects/${dir.name}`).catch(() => [])) {
       const chatId = file.name.replace(/\.jsonl$/, '')
       if (file.kind !== 'file' || chatId === file.name || chatId === id) continue

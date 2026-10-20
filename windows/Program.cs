@@ -23,8 +23,9 @@ using Microsoft.Win32;
 
 static class App
 {
-    // Shares version numbers with VERSION in build.sh; one GitHub release carries both builds.
-    public const string Version = "1.4.2";
+    // Same version as build.sh, vscode/package.json, and mod/.claude-plugin/plugin.json.
+    // One GitHub release carries the Mac and Windows builds.
+    public const string Version = "1.4.3";
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     static extern int GetCurrentPackageFullName(ref int length, StringBuilder name);

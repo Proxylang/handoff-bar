@@ -25,6 +25,14 @@ let tailBytes = 512 * 1024
 // Claude Code names a chat's project folder after its working folder. These are temp folders,
 // used by scripts that run helper chats. Those are not the user's chats.
 let tempProjectPrefixes = ["-private-var-folders-", "-private-tmp", "-tmp"]
+// Plugins that run Claude in the background from their own folders, such as claude-mem
+// (~/.claude/plugins/marketplaces/thedotmack, ~/.claude-mem/observer-sessions).
+let pluginProjectParts = ["--claude-plugins-", "--claude-mem-"]
+
+/// True for a project folder whose chats are helper chats, not the user's.
+func isHelperProject(_ name: String) -> Bool {
+    tempProjectPrefixes.contains(where: name.hasPrefix) || pluginProjectParts.contains(where: name.contains)
+}
 
 // Recent prompts show where the chat is heading. Ten is enough without bloat.
 let recentPrompts = 10
@@ -71,7 +79,7 @@ final class HandoffWriter {
         let fm = FileManager.default
         var wrote = false
         let projects = (try? fm.contentsOfDirectory(atPath: projectsDir.path)) ?? []
-        for project in projects where !tempProjectPrefixes.contains(where: project.hasPrefix) {
+        for project in projects where !isHelperProject(project) {
             let dir = projectsDir.appendingPathComponent(project)
             // Top-level chat files only. Subagent files sit in subfolders.
             let chats = (try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []

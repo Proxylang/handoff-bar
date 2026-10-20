@@ -72,7 +72,10 @@ static class Writer
     public static bool IsTempProject(string folderName)
     {
         return folderName.Contains("-AppData-Local-Temp") || folderName.StartsWith("-private-var-folders-")
-            || folderName.StartsWith("-private-tmp") || folderName.StartsWith("-tmp");
+            || folderName.StartsWith("-private-tmp") || folderName.StartsWith("-tmp")
+            // Plugins that run Claude in the background from their own folders, such as claude-mem
+            // (~/.claude/plugins/marketplaces/thedotmack, ~/.claude-mem/observer-sessions).
+            || folderName.Contains("--claude-plugins-") || folderName.Contains("--claude-mem-");
     }
 
     // Recent prompts show where the chat is heading. Ten is enough without bloat.

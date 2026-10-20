@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 class Handoff
 {
@@ -40,7 +41,8 @@ class Handoff
         FromTempFolder = folder.Length == 0
             || folder.StartsWith(Path.GetTempPath().TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)
             || folder.IndexOf(@"\AppData\Local\Temp", StringComparison.OrdinalIgnoreCase) >= 0
-            || folder.StartsWith("/private/var/folders/") || folder.StartsWith("/tmp");
+            || folder.StartsWith("/private/var/folders/") || folder.StartsWith("/tmp")
+            || Writer.IsTempProject(Regex.Replace(folder, "[^a-zA-Z0-9]", "-"));
         Project = FromTempFolder ? "" : Path.GetFileName(folder.TrimEnd('\\', '/'));
         // The last numbered line under "Recent requests" is the newest ask. Shown on hover.
         LastRequest = lines.SkipWhile(l => !l.StartsWith("## Recent requests")).Skip(1)

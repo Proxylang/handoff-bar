@@ -17,7 +17,15 @@ export function saveTimes(cache: number): number[] {
 const tailBytes = 512 * 1024
 // Claude Code names a chat's project folder after its working folder. These are temp folders,
 // used by scripts that run helper chats. Those are not the user's chats.
-export const tempProjectPrefixes = ['-private-var-folders-', '-private-tmp', '-tmp']
+const tempProjectPrefixes = ['-private-var-folders-', '-private-tmp', '-tmp']
+// Plugins that run Claude in the background from their own folders, such as claude-mem
+// (~/.claude/plugins/marketplaces/thedotmack, ~/.claude-mem/observer-sessions).
+const pluginProjectParts = ['--claude-plugins-', '--claude-mem-']
+
+/** True for a project folder whose chats are helper chats, not the user's. */
+export function isHelperProject(name: string): boolean {
+  return tempProjectPrefixes.some(p => name.startsWith(p)) || pluginProjectParts.some(p => name.includes(p))
+}
 
 const recentPrompts = 10
 const promptChars = 500

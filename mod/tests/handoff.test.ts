@@ -150,6 +150,9 @@ test("at start, the past week's other chats get a missing or outdated handoff, o
     [chat('-w-old', 'old')]: { mtimeMs: REPLY_AT - 8 * day },
     [chat('-w-old', 'big')]: { mtimeMs: REPLY_AT - day, size: 5 * 1024 * 1024 },
     [chat('-private-tmp-x', 'helper')]: { mtimeMs: REPLY_AT },
+    // claude-mem's background chats, from old and new versions.
+    [chat('-Users-me--claude-plugins-marketplaces-thedotmack', 'mem-old')]: { mtimeMs: REPLY_AT },
+    [chat('-Users-me--claude-mem-observer-sessions', 'mem-new')]: { mtimeMs: REPLY_AT },
   })
   await start($)
   await clock.advance(1000)
@@ -157,7 +160,7 @@ test("at start, the past week's other chats get a missing or outdated handoff, o
   await clock.advance(5000)
   expect([...writes.keys()]).toEqual([saved('new'), saved('stale')])
   expect(writes.get(saved('stale'))).toBe(buildHandoff(TEXT, chat('-w-old', 'stale')))
-  expect(listed.filter(dir => dir.includes('-private-tmp'))).toEqual([])
+  expect(listed.filter(dir => dir.includes('-private-tmp') || dir.includes('--claude-'))).toEqual([])
 })
 
 test('when the user has their own /handoff, the mod uses /handoffbar and still counts down', async ($, on) => {

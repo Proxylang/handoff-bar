@@ -35,6 +35,7 @@ struct Handoff: Identifiable {
         }
         let folder = String(lines.first { $0.hasPrefix("- Folder: ") }?.dropFirst(10) ?? "")
         fromTempFolder = !folder.hasPrefix(NSHomeDirectory())
+            || isHelperProject(folder.replacingOccurrences(of: "[^a-zA-Z0-9]", with: "-", options: .regularExpression))
         project = fromTempFolder ? "" : (folder as NSString).lastPathComponent
         // The last numbered line under "Recent requests" is the newest ask. Shown on hover.
         lastRequest = lines.drop { !$0.hasPrefix("## Recent requests") }.dropFirst()
@@ -59,8 +60,8 @@ func latestCustomTitle(_ chat: URL) -> String? {
     return nil
 }
 
-/// Newest first. Handoffs from temp-folder helper chats are left out; older versions of
-/// the writer saved those too.
+/// Newest first. Handoffs from temp-folder and plugin helper chats are left out; older versions
+/// of the writer saved those too.
 func loadHandoffs() -> [Handoff] {
     let files = (try? FileManager.default.contentsOfDirectory(
         at: handoffDir, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
